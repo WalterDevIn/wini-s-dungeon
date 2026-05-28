@@ -6,19 +6,27 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 ## Estado actual
 
-Milestone 0 completado.
+Milestone 1 completado.
 
-El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, limpia la pantalla cada frame y dibuja un objeto simple de prueba.
+El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
-Todavía no hay ECS, gameplay, mapa, combate, input jugable, UI compleja, conjuros ni assets externos.
+El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
+
+Todavía no hay combate, vida/daño, enemigos, conjuros, menú táctico, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
 
-Ninguno.
+- `playerControlSystem`: convierte movement intent en velocidad para entidades `PlayerControlled`.
+- `movementSystem`: aplica movimiento con `deltaSeconds` y colisión básica contra tilemap.
 
 ## Componentes existentes
 
-Ninguno.
+- `Position`
+- `Velocity`
+- `Renderable`
+- `Collider`
+- `MovementStats`
+- `PlayerControlled`
 
 ## Commands existentes
 
@@ -32,39 +40,70 @@ Ninguno.
 
 Ninguno.
 
+## Mundo existente
+
+- Tilemap fijo mínimo con tiles de piso y pared.
+- Helper básico de colisión contra tiles sólidos.
+
+## Input existente
+
+- Input de teclado mínimo para movimiento con WASD y flechas.
+- Input produce movement intent.
+- Input no modifica ECS ni componentes.
+
+## Render existente
+
+- Canvas renderer mínimo.
+- Dibuja tilemap.
+- Dibuja entidades con `Position` + `Renderable`.
+- Render no modifica estado de juego.
+
 ## Archivos de aplicación existentes
 
 - `index.html`
 - `style.css`
 - `src/app/main.js`
+- `src/ecs/world.js`
+- `src/domain/components.js`
+- `src/input/keyboardInput.js`
+- `src/world/tilemap.js`
+- `src/simulation/playerControlSystem.js`
+- `src/simulation/movementSystem.js`
+- `src/render/canvasRenderer.js`
 
 ## Próximo objetivo
 
-Milestone 1: Movimiento y colisión.
+Milestone 2: Vida, daño y enemigo básico.
 
 Crear:
 
-- ECS mínimo.
-- Entidad jugador.
-- Componentes `Position`, `Velocity`, `Renderable`, `Collider`, `MovementStats`.
-- Tilemap simple.
-- Colisión contra paredes.
-- Cámara básica si hace falta.
+- `Health`.
+- `Creature`.
+- `Faction`.
+- Enemigo quieto.
+- Ataque de prueba.
+- Muerte de entidad.
 
 ## Riesgos actuales
 
 - Convertir `src/app/main.js` en un archivo demasiado grande.
-- Empezar por features complejas antes del core.
-- Migrar código viejo sin revisar arquitectura.
-- Crear lógica de juego dentro de UI o render.
+- Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
+- Crear lógica de combate antes de cerrar bien vida/daño.
+- Crear lógica de juego dentro de input o render.
 - Pedir a la IA implementaciones grandes sin scope.
 - Intentar hacer multiplayer o servidor demasiado pronto.
 
 ## Decisiones recientes
 
-- Milestone 0 fue implementado sin ECS.
-- Milestone 0 fue implementado sin input jugable.
-- Milestone 0 fue implementado sin mapa, combate, UI compleja, conjuros ni assets externos.
+- Milestone 1 introdujo ECS mínimo.
+- El jugador ya es una entidad ECS dinámica.
+- El tilemap base vive fuera del ECS.
+- Input produce movement intent y no modifica ECS.
+- Simulation actualiza ECS y resuelve movimiento/colisión.
+- Render dibuja el estado sin modificar componentes.
+- No se crearon commands ni events todavía.
+- No se creó command buffer ni event bus todavía.
+- No se implementó combate, vida/daño, enemigos, conjuros, UI compleja ni assets externos.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
