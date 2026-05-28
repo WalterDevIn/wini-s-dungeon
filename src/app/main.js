@@ -1,3 +1,19 @@
+import { createEntity, createWorld, addComponent } from "../ecs/world.js";
+import {
+  Collider,
+  ComponentType,
+  MovementStats,
+  PlayerControlled,
+  Position,
+  Renderable,
+  Velocity,
+} from "../domain/components.js";
+import { createKeyboardInput } from "../input/keyboardInput.js";
+import { tilemap } from "../world/tilemap.js";
+import { playerControlSystem } from "../simulation/playerControlSystem.js";
+import { movementSystem } from "../simulation/movementSystem.js";
+import { createCanvasRenderer } from "../render/canvasRenderer.js";
+
 const canvas = document.querySelector("#game-canvas");
 const context = canvas?.getContext("2d");
 
@@ -5,53 +21,59 @@ if (!canvas || !context) {
   throw new Error("No se pudo inicializar el canvas del juego.");
 }
 
+const world = createWorld();
+const keyboardInput = createKeyboardInput();
+const renderer = createCanvasRenderer(canvas, context);
+
+createPlayer(world);
+
 let lastFrameTime = performance.now();
 
-function resizeCanvas() {
-  const pixelRatio = window.devicePixelRatio || 1;
-  const width = Math.floor(window.innerWidth * pixelRatio);
-  const height = Math.floor(window.innerHeight * pixelRatio);
-
-  if (canvas.width === width && canvas.height === height) {
-    return;
-  }
-
-  canvas.width = width;
-  canvas.height = height;
-}
-
-function clearFrame() {
-  context.fillStyle = "#10131a";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-}
-
-function drawTestObject(elapsedSeconds) {
-  const pixelRatio = window.devicePixelRatio || 1;
-  const centerX = canvas.width / 2;
-  const centerY = canvas.height / 2;
-  const radius = 28 * pixelRatio;
-  const pulse = Math.sin(elapsedSeconds * 2) * 4 * pixelRatio;
-
-  context.fillStyle = "#f2c166";
-  context.beginPath();
-  context.arc(centerX, centerY, radius + pulse, 0, Math.PI * 2);
-  context.fill();
-
-  context.strokeStyle = "#fff1c7";
-  context.lineWidth = 3 * pixelRatio;
-  context.stroke();
-}
-
 function frame(currentTime) {
-  const deltaSeconds = (currentTime - lastFrameTime) / 1000;
+  const deltaSeconds = Math.min((currentTime - lastFrameTime) / 1000, 0.05);
   lastFrameTime = currentTime;
 
-  resizeCanvas();
-  clearFrame();
-  drawTestObject(currentTime / 1000, deltaSeconds);
+  const movementIntent = keyboardInput.getMovementIntent();
+
+  playerControlSystem(world, movementIntent);
+  movementSystem(world, tilemap, deltaSeconds);
+  renderer.render(world, tilemap);
 
   requestAnimationFrame(frame);
 }
 
-resizeCanvas();
+function createPlayer(world) {
+  const player = createEntity(world);
+
+  addComponent(world, player, ComponentType.Position, Position(96, 96));
+  addComponent(world, player, ComponentType.Velocity, Velocity());
+  addComponent(
+    world,
+    player,
+    ComponentType.Renderable,
+    Renderable({
+      shape: "rect",
+      width: 28,
+      height: 28,
+      color: "#f2c166",
+    }),
+  );
+  addComponent(
+    world,
+    player,
+    ComponentType.Collider,
+    Collider({
+      width: 28,
+      height: 28,
+    }),
+  );
+  addComponent(
+    world,
+    player,
+    ComponentType.MovementStats,
+    MovementStats({ speed: 180 }),
+  );
+  addComponent(world, player, ComponentType.PlayerControlled, PlayerControlled());
+}
+
 requestAnimationFrame(frame);
