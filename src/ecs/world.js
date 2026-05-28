@@ -13,6 +13,18 @@ export function createEntity(world) {
   return entityId;
 }
 
+export function removeEntity(world, entityId) {
+  if (!world.entities.has(entityId)) {
+    return;
+  }
+
+  world.entities.delete(entityId);
+
+  for (const componentStore of world.components.values()) {
+    componentStore.delete(entityId);
+  }
+}
+
 export function addComponent(world, entityId, componentType, componentData) {
   if (!world.entities.has(entityId)) {
     throw new Error(`No existe la entidad ${entityId}.`);
