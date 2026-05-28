@@ -14,6 +14,8 @@ El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa
 
 Se aplicó un refactor mínimo pre-Milestone 2: la creación inicial del jugador fue extraída desde `src/app/main.js` hacia `src/game/createPlayer.js` para evitar que `main.js` acumule composición interna de entidades.
 
+Se aplicó un refactor de legibilidad ECS: `src/ecs/world.js` ahora expone `addComponents(...)`, un helper genérico para agregar varios componentes a una entidad sin cambiar el modelo ECS ni crear arquitectura futura.
+
 Todavía no hay combate, vida/daño, enemigos, conjuros, menú táctico, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
@@ -60,9 +62,18 @@ Ninguno.
 - Dibuja entidades con `Position` + `Renderable`.
 - Render no modifica estado de juego.
 
+## ECS existente
+
+- `createWorld`: crea el contenedor ECS mínimo.
+- `createEntity`: crea una entidad.
+- `addComponent`: agrega un componente a una entidad.
+- `addComponents`: agrega varios componentes a una entidad usando pares `[componentType, componentData]`.
+- `getComponent`: obtiene un componente de una entidad.
+- `queryEntities`: consulta entidades por componentes.
+
 ## Factories/setup existentes
 
-- `createPlayer`: crea la entidad jugador y compone sus componentes iniciales.
+- `createPlayer`: crea la entidad jugador y compone sus componentes iniciales usando `addComponents(...)`.
 
 ## Archivos de aplicación existentes
 
@@ -102,6 +113,8 @@ Crear:
 
 ## Decisiones recientes
 
+- Se agregó `addComponents(...)` a `src/ecs/world.js` como helper genérico de legibilidad ECS.
+- `createPlayer` ahora usa `addComponents(...)` para declarar sus componentes iniciales de forma más compacta.
 - Se extrajo `createPlayer` desde `src/app/main.js` hacia `src/game/createPlayer.js`.
 - `src/app/main.js` queda como composition root de canvas/context, world, input, renderer, frame loop, sistemas y render.
 - Milestone 1 introdujo ECS mínimo.
