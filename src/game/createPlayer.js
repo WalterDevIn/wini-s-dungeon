@@ -2,6 +2,9 @@ import { addComponents, createEntity } from "../ecs/world.js";
 import {
   Collider,
   ComponentType,
+  Creature,
+  Faction,
+  Health,
   MovementStats,
   PlayerControlled,
   Position,
@@ -35,6 +38,9 @@ export function createPlayer(world) {
     ],
     [ComponentType.MovementStats, MovementStats({ speed: 180 })],
     [ComponentType.PlayerControlled, PlayerControlled()],
+    [ComponentType.Health, Health({ current: 10, max: 10 })],
+    [ComponentType.Creature, Creature({ kind: "player" })],
+    [ComponentType.Faction, Faction({ id: "player" })],
   ]);
 
   return player;
