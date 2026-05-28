@@ -12,6 +12,8 @@ El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
 
+Se aplicó un refactor mínimo pre-Milestone 2: la creación inicial del jugador fue extraída desde `src/app/main.js` hacia `src/game/createPlayer.js` para evitar que `main.js` acumule composición interna de entidades.
+
 Todavía no hay combate, vida/daño, enemigos, conjuros, menú táctico, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
@@ -58,6 +60,10 @@ Ninguno.
 - Dibuja entidades con `Position` + `Renderable`.
 - Render no modifica estado de juego.
 
+## Factories/setup existentes
+
+- `createPlayer`: crea la entidad jugador y compone sus componentes iniciales.
+
 ## Archivos de aplicación existentes
 
 - `index.html`
@@ -65,6 +71,7 @@ Ninguno.
 - `src/app/main.js`
 - `src/ecs/world.js`
 - `src/domain/components.js`
+- `src/game/createPlayer.js`
 - `src/input/keyboardInput.js`
 - `src/world/tilemap.js`
 - `src/simulation/playerControlSystem.js`
@@ -86,7 +93,7 @@ Crear:
 
 ## Riesgos actuales
 
-- Convertir `src/app/main.js` en un archivo demasiado grande.
+- Sobrecargar `src/game/createPlayer.js` con lógica que debería vivir en content/domain si el jugador crece demasiado.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de combate antes de cerrar bien vida/daño.
 - Crear lógica de juego dentro de input o render.
@@ -95,6 +102,8 @@ Crear:
 
 ## Decisiones recientes
 
+- Se extrajo `createPlayer` desde `src/app/main.js` hacia `src/game/createPlayer.js`.
+- `src/app/main.js` queda como composition root de canvas/context, world, input, renderer, frame loop, sistemas y render.
 - Milestone 1 introdujo ECS mínimo.
 - El jugador ya es una entidad ECS dinámica.
 - El tilemap base vive fuera del ECS.
