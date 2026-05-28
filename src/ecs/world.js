@@ -25,6 +25,12 @@ export function addComponent(world, entityId, componentType, componentData) {
   world.components.get(componentType).set(entityId, componentData);
 }
 
+export function addComponents(world, entityId, componentEntries) {
+  for (const [componentType, componentData] of componentEntries) {
+    addComponent(world, entityId, componentType, componentData);
+  }
+}
+
 export function getComponent(world, entityId, componentType) {
   return world.components.get(componentType)?.get(entityId) ?? null;
 }
