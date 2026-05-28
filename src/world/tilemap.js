@@ -41,9 +41,9 @@ export function isSolidAtPixel(tilemapData, x, y) {
 
 export function collidesWithSolidTile(tilemapData, rect) {
   const left = rect.x;
-  const right = rect.x + rect.width;
+  const right = rect.x + rect.width - 1;
   const top = rect.y;
-  const bottom = rect.y + rect.height;
+  const bottom = rect.y + rect.height - 1;
 
   return (
     isSolidAtPixel(tilemapData, left, top) ||
