@@ -12,6 +12,201 @@ ECS significa:
 
 La simulación debe ser independiente de UI, canvas, DOM e input físico.
 
+## Target architecture
+
+Esta es la arquitectura objetivo madura del proyecto.
+
+Este árbol no significa que todos estos archivos deban existir desde el inicio. Funciona como mapa de destino: cada carpeta o archivo se crea solo cuando una feature real necesita ese límite.
+
+La arquitectura objetivo define dónde debe vivir cada responsabilidad cuando aparezca.
+
+```txt
+src/
+  app/
+    main.js
+    bootstrap.js
+    gameLoop.js
+
+  game/
+    createGameSession.js
+    createInitialWorld.js
+    gameModes.js
+    gameClock.js
+    buildSnapshot.js
+
+  ecs/
+    world.js
+    query.js
+    commandBuffer.js
+    eventBus.js
+
+  domain/
+    components/
+      index.js
+      transformComponents.js
+      movementComponents.js
+      collisionComponents.js
+      renderComponents.js
+      creatureComponents.js
+      combatComponents.js
+      actionEconomyComponents.js
+      spellComponents.js
+      projectileComponents.js
+      inventoryComponents.js
+      interactionComponents.js
+      visionComponents.js
+      timeComponents.js
+      progressionComponents.js
+
+    factories/
+      createPlayer.js
+      createCreature.js
+      createProjectile.js
+      createAreaEffect.js
+      create[DynamicEntity].js
+
+    commands/
+      index.js
+      movementCommands.js
+      combatCommands.js
+      spellCommands.js
+      interactionCommands.js
+      inventoryCommands.js
+      restCommands.js
+      progressionCommands.js
+
+    events/
+      index.js
+      combatEvents.js
+      spellEvents.js
+      projectileEvents.js
+      interactionEvents.js
+      inventoryEvents.js
+      restEvents.js
+      progressionEvents.js
+
+    rules/
+      damageRules.js
+      attackRules.js
+      actionEconomyRules.js
+      targetingRules.js
+      conditionRules.js
+      restRules.js
+      progressionRules.js
+
+  content/
+    player/
+      playerStart.js
+      playerProgression.js
+
+    creatures/
+      creatureRegistry.js
+      enemies/
+
+    spells/
+      spellRegistry.js
+      targetingTypes.js
+      effectTypes.js
+      definitions/
+
+    items/
+      itemRegistry.js
+      weapons.js
+      armor.js
+      consumables.js
+
+    tiles/
+      tileRegistry.js
+      tileDefinitions.js
+
+  input/
+    keyboardInput.js
+    mouseInput.js
+    inputState.js
+    intentMapper.js
+
+  simulation/
+    runSimulationStep.js
+
+    systems/
+      playerControlSystem.js
+      aiSystem.js
+      movementSystem.js
+      collisionSystem.js
+      interactionSystem.js
+      combatSystem.js
+      actionEconomySystem.js
+      castingSystem.js
+      spellResolveSystem.js
+      projectileMovementSystem.js
+      projectileCollisionSystem.js
+      projectileImpactSystem.js
+      lifetimeSystem.js
+      statusEffectSystem.js
+      inventorySystem.js
+      visionSystem.js
+      restSystem.js
+      progressionSystem.js
+      deathSystem.js
+      cleanupSystem.js
+
+    helpers/
+      movementCollision.js
+      projectileHitDetection.js
+      meleeHitDetection.js
+      areaQueries.js
+      lineOfSightQueries.js
+
+  world/
+    tilemap.js
+    tileCollision.js
+    mapFactory.js
+    mapGeneration.js
+    rooms.js
+    chunks.js
+    lineOfSight.js
+    lighting.js
+    pathfinding.js
+
+  render/
+    canvasRenderer.js
+    camera.js
+    renderSnapshot.js
+    drawMap.js
+    drawEntities.js
+    drawProjectiles.js
+    drawAreaEffects.js
+    drawLighting.js
+    drawOverlays.js
+    drawDebug.js
+
+  ui/
+    uiRoot.js
+    hud/
+    actionMenu/
+    inventory/
+    spellbook/
+    screens/
+    debug/
+
+  save/
+    saveGame.js
+    loadGame.js
+    serializeWorld.js
+    deserializeWorld.js
+    saveVersion.js
+
+  debug/
+    debugMode.js
+    debugFlags.js
+    debugCommands.js
+
+  utils/
+    math.js
+    grid.js
+    random.js
+```
+
 ## Capas principales
 
 ### `src/app/`
