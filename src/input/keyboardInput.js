@@ -9,16 +9,16 @@ const MOVEMENT_KEYS = Object.freeze({
   KeyD: { x: 1, y: 0 },
 });
 
-const TEST_ATTACK_KEY = "Space";
+const ATTACK_KEY = "Space";
 
 export function createKeyboardInput(target = window) {
   const pressedKeys = new Set();
-  let testAttackRequested = false;
+  let attackRequested = false;
 
   function handleKeyDown(event) {
-    if (event.code === TEST_ATTACK_KEY) {
-      if (!pressedKeys.has(TEST_ATTACK_KEY)) {
-        testAttackRequested = true;
+    if (event.code === ATTACK_KEY) {
+      if (!pressedKeys.has(ATTACK_KEY)) {
+        attackRequested = true;
       }
 
       pressedKeys.add(event.code);
@@ -35,7 +35,7 @@ export function createKeyboardInput(target = window) {
   }
 
   function handleKeyUp(event) {
-    if (event.code === TEST_ATTACK_KEY) {
+    if (event.code === ATTACK_KEY) {
       pressedKeys.delete(event.code);
       event.preventDefault();
       return;
@@ -79,14 +79,14 @@ export function createKeyboardInput(target = window) {
     };
   }
 
-  function consumeTestAttackIntent() {
-    const wasRequested = testAttackRequested;
-    testAttackRequested = false;
+  function consumeAttackIntent() {
+    const wasRequested = attackRequested;
+    attackRequested = false;
     return wasRequested;
   }
 
   return {
     getMovementIntent,
-    consumeTestAttackIntent,
+    consumeAttackIntent,
   };
 }
