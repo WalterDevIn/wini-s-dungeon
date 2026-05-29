@@ -88,6 +88,5 @@ export function createKeyboardInput(target = window) {
   return {
     getMovementIntent,
     consumeAttackIntent,
-    consumeTestAttackIntent: consumeAttackIntent,
   };
 }
