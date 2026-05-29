@@ -33,3 +33,119 @@ body {
   background: #000;
   image-rendering: pixelated;
 }
+
+#ui-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.game-ui-root {
+  color: #f4f1e8;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.primary-action-card {
+  position: absolute;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 14rem;
+  padding: 0.75rem 1rem;
+  border: 3px solid #f4f1e8;
+  background: rgba(0, 0, 0, 0.82);
+  box-shadow: 0 0 0 1px #000, 0 0 22px rgba(244, 241, 232, 0.12);
+}
+
+.primary-action-orb {
+  width: 4rem;
+  height: 4rem;
+  display: grid;
+  place-items: center;
+  border: 3px solid #f4f1e8;
+  border-radius: 999px;
+  background: #000;
+  color: #f4f1e8;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.primary-action-orb.is-pressed {
+  transform: scale(0.94);
+  border-color: #00ff66;
+  background: #00ff66;
+  color: #000;
+  box-shadow: 0 0 18px rgba(0, 255, 102, 0.36);
+}
+
+.primary-action-orb.is-busy:not(.is-pressed) {
+  border-color: #d7d0bd;
+  box-shadow: inset 0 0 0 2px rgba(215, 208, 189, 0.28);
+}
+
+.primary-action-key {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.primary-action-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.primary-action-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.primary-action-state {
+  color: #d7d0bd;
+  font-size: 0.9rem;
+}
+
+.debug-panel {
+  position: absolute;
+  right: 1.25rem;
+  top: 1.25rem;
+  width: 18rem;
+  padding: 0.9rem 1rem;
+  border: 3px solid #f4f1e8;
+  background: rgba(0, 0, 0, 0.82);
+  box-shadow: 0 0 0 1px #000, 0 0 22px rgba(244, 241, 232, 0.12);
+}
+
+.debug-panel-title {
+  margin-bottom: 0.65rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 0.85rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.debug-grid dt {
+  color: #d7d0bd;
+}
+
+.debug-grid dd {
+  margin: 0;
+  text-align: right;
+  color: #f4f1e8;
+}
