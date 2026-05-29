@@ -16,7 +16,9 @@ El juego ahora tiene vida, daño, facciones, criatura jugador, enemigo quieto, m
 
 Se aplicó Milestone 3: se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`; se agregó cooldown de ataque; se reemplazó el flujo activo de ataque básico por `meleeCombatSystem`; y el daño pasa por reducción plana.
 
-Deuda menor: `src/simulation/basicAttackSystem.js` quedó físicamente en el repo porque la eliminación fue bloqueada por la herramienta. No está conectado a `runSimulationStep` y debe eliminarse en el próximo paso de limpieza.
+Se aplicó limpieza parcial post-Milestone 3: `src/app/main.js` ya usa `consumeAttackIntent()` y pasa `attackIntent` a `runSimulationStep`; `keyboardInput.js` ya no expone el alias temporal `consumeTestAttackIntent`; `runSimulationStep` ya no acepta `basicAttackIntent`.
+
+Deuda menor: `src/simulation/basicAttackSystem.js` quedó físicamente en el repo porque la eliminación fue bloqueada por la herramienta. No está conectado a `runSimulationStep` y debe eliminarse manualmente o en un intento posterior si la herramienta lo permite.
 
 Se aplicó un refactor de render y colisión pre-Milestone 3: el dibujo de mapa y entidades fue separado desde `canvasRenderer.js` hacia `drawMap.js` y `drawEntities.js`, y la resolución de movimiento contra tiles fue extraída desde `movementSystem.js` hacia `simulation/helpers/movementCollision.js`.
 
@@ -37,7 +39,7 @@ Todavía no hay IA enemiga, ataque enemigo, conjuros, menú táctico, inventario
 
 ## Sistemas obsoletos pendientes de eliminar
 
-- `basicAttackSystem`: quedó desconectado del loop. Debe eliminarse en una limpieza posterior.
+- `basicAttackSystem`: quedó desconectado del loop. Debe eliminarse manualmente o en una limpieza posterior si la herramienta lo permite.
 
 ## Componentes existentes
 
@@ -82,7 +84,6 @@ Ninguno.
 - Input de teclado mínimo para movimiento con WASD y flechas.
 - Input produce movement intent.
 - Input produce attack intent consumible con `Space`.
-- Input conserva alias temporal `consumeTestAttackIntent` para compatibilidad con `main.js`.
 - Input no modifica ECS ni componentes.
 - Input no aplica daño.
 
@@ -148,8 +149,6 @@ Ninguno.
 Limpieza inmediata post-Milestone 3:
 
 - Eliminar `src/simulation/basicAttackSystem.js`.
-- Actualizar `src/app/main.js` para usar `consumeAttackIntent()` y pasar `attackIntent` a `runSimulationStep`.
-- Eliminar alias temporal `consumeTestAttackIntent` de `keyboardInput.js`.
 
 Luego: Milestone 4: IA simple.
 
@@ -163,8 +162,7 @@ Crear:
 ## Riesgos actuales
 
 - `basicAttackSystem` quedó como archivo obsoleto y debe eliminarse pronto para evitar confusión.
-- `main.js` todavía usa el nombre viejo `basicAttackIntent` por compatibilidad; debe limpiarse en el paso posterior.
-- Crear IA enemiga antes de cerrar la limpieza post-Milestone 3.
+- Crear IA enemiga antes de eliminar el archivo obsoleto.
 - Sobrecargar `meleeCombatSystem` con ataque enemigo, IA, efectos, knockback o feedback visual sin scope.
 - Sobrecargar `runSimulationStep` con lógica que debería vivir en sistemas específicos.
 - Convertir `Renderable` en una bolsa de datos visuales demasiado amplia sin diseñar renderer/content.
@@ -176,6 +174,8 @@ Crear:
 
 ## Decisiones recientes
 
+- Se limpió el flujo activo post-Milestone 3: `main.js` usa `attackIntent`, `runSimulationStep` recibe `attackIntent`, e input expone solo `consumeAttackIntent`.
+- La eliminación física de `basicAttackSystem` fue bloqueada por la herramienta; quedó desconectado y documentado como archivo obsoleto.
 - Milestone 3 introdujo combate melee mínimo con cooldown.
 - Se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`.
 - Se agregó `actionEconomySystem` para reducir cooldowns por frame.
@@ -183,7 +183,6 @@ Crear:
 - Se agregó `meleeHitDetection` como helper de detección melee.
 - `DamageReduction` mitiga daño con reducción plana.
 - Input produce un intent consumible de ataque con `Space`, pero no aplica daño.
-- `basicAttackSystem` quedó desconectado del loop y pendiente de eliminación.
 - No se crearon commands ni events todavía.
 - No se creó command buffer ni event bus todavía.
 - No se implementó IA enemiga, ataque enemigo, UI compleja ni assets externos.
