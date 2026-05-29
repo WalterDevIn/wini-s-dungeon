@@ -1,6 +1,6 @@
 import { getComponent, queryEntities } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
-import { collidesWithSolidTile } from "../world/tilemap.js";
+import { moveWithTileCollision } from "./helpers/movementCollision.js";
 
 export function movementSystem(world, tilemap, deltaSeconds) {
   const movingEntities = queryEntities(world, [
@@ -14,32 +14,12 @@ export function movementSystem(world, tilemap, deltaSeconds) {
     const velocity = getComponent(world, entityId, ComponentType.Velocity);
     const collider = getComponent(world, entityId, ComponentType.Collider);
 
-    moveAxis(tilemap, position, collider, velocity.x * deltaSeconds, 0);
-    moveAxis(tilemap, position, collider, 0, velocity.y * deltaSeconds);
+    moveWithTileCollision(
+      tilemap,
+      position,
+      collider,
+      velocity.x * deltaSeconds,
+      velocity.y * deltaSeconds,
+    );
   }
-}
-
-function moveAxis(tilemap, position, collider, deltaX, deltaY) {
-  if (deltaX === 0 && deltaY === 0) {
-    return;
-  }
-
-  const nextPosition = {
-    x: position.x + deltaX,
-    y: position.y + deltaY,
-  };
-
-  const nextRect = {
-    x: nextPosition.x,
-    y: nextPosition.y,
-    width: collider.width,
-    height: collider.height,
-  };
-
-  if (collidesWithSolidTile(tilemap, nextRect)) {
-    return;
-  }
-
-  position.x = nextPosition.x;
-  position.y = nextPosition.y;
 }
