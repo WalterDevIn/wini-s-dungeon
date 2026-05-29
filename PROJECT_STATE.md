@@ -6,17 +6,21 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 ## Estado actual
 
-Milestone 4 completado.
+Milestone 5 parcial completado: UI mínima de feedback táctico, click izquierdo como acción primaria y primer command mínimo de ataque.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
 
-El juego tiene vida, daño, facciones, criatura jugador, enemigo, muerte/remoción de entidad y combate melee mínimo con fases. El jugador puede usar `Space` para iniciar un ataque melee; el ataque entra en `windup`, luego resuelve impacto contra el estado actual del mundo, y después entra en `recovery`.
+El jugador ataca con click izquierdo mediante un `AttackCommand` mínimo. El input físico no aplica daño ni modifica ECS; solo produce intención cruda que `main.js` convierte en command para la simulación.
+
+El juego tiene vida, daño, facciones, criatura jugador, enemigo, muerte/remoción de entidad y combate melee mínimo con fases. El ataque entra en `windup`, luego resuelve impacto contra el estado actual del mundo, y después entra en `recovery`.
 
 Regla actual de ataque melee: un ataque confirmado consume la acción aunque no impacte. El daño solo se aplica si, al terminar el `windup`, existe un objetivo enemigo válido dentro del alcance.
 
 El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y distancia, lo persigue en línea recta y ataca al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
+
+La UI mínima muestra un indicador visual de click izquierdo / ataque y una pequeña ventana de feedback con estado de input, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
 Se aplicó un refactor menor post-Milestone 4 para reducir complejidad de archivos de runtime largos: `aiSystem` delega targeting en `aiTargeting`, `meleeCombatSystem` ya no construye requests de jugador/IA, y la geometría compartida vive en `geometryRules`.
 
@@ -24,15 +28,13 @@ Se aplicó Milestone 3.5: `ActionEconomy` dejó de ser solo un cooldown numéric
 
 Se aplicó Milestone 3: se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`; se agregó combate melee mínimo; se reemplazó el ataque básico de prueba por `meleeCombatSystem`; y el daño pasa por reducción plana.
 
-Se aplicó limpieza post-Milestone 3: `src/app/main.js` usa `consumeAttackIntent()` y pasa `attackIntent` a `runSimulationStep`; `keyboardInput.js` no expone alias temporales; `runSimulationStep` no acepta nombres temporales; y `src/simulation/basicAttackSystem.js` fue eliminado.
-
 Se aplicó un refactor de render y colisión pre-Milestone 3: el dibujo de mapa y entidades fue separado desde `canvasRenderer.js` hacia `drawMap.js` y `drawEntities.js`, y la resolución de movimiento contra tiles fue extraída desde `movementSystem.js` hacia `simulation/helpers/movementCollision.js`.
 
 Se aplicó un cambio visual pre-Milestone 3: el renderer dibuja una estética roguelike mínima con tiles de pared como `#`, piso con puntos tenues, grilla translúcida y entidades como glyphs sobre canvas.
 
 Se aplicó un refactor arquitectónico post-Milestone 2: la simulación del frame ahora se orquesta desde `runSimulationStep(...)`, `src/app/main.js` no conoce el orden interno detallado de render ni contiene reglas de simulación, y las reglas puras de daño/rango viven en `src/domain/rules/`.
 
-Todavía no hay conjuros, menú táctico, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
+Todavía no hay pausa táctica real, conjuros, menú táctico con botones de acción, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
 
@@ -63,7 +65,7 @@ Todavía no hay conjuros, menú táctico, inventario, cámara compleja, assets e
 
 ## Commands existentes
 
-Ninguno.
+- `AttackCommand`: command mínimo para solicitar ataque melee desde la acción primaria del jugador.
 
 ## Events existentes
 
@@ -87,10 +89,16 @@ Ninguno.
 ## Input existente
 
 - Input de teclado mínimo para movimiento con WASD y flechas.
-- Input produce movement intent.
-- Input produce attack intent consumible con `Space`.
+- Input de mouse para acción primaria con click izquierdo.
+- Input produce movement intent y primary click intent.
 - Input no modifica ECS ni componentes.
 - Input no aplica daño.
+
+## UI existente
+
+- `hudUi`: muestra indicador visual de click izquierdo / ataque y una ventana mínima de feedback.
+- `buildUiSnapshot`: construye un snapshot simple para UI con input, último command y estado de acción del jugador.
+- La UI no modifica ECS ni llama sistemas de simulation.
 
 ## Render existente
 
@@ -118,7 +126,12 @@ Ninguno.
 - `movementCollision`: resuelve movimiento por eje contra tilemap usando colisión de tiles.
 - `meleeHitDetection`: busca el primer objetivo melee válido para un atacante y un perfil de ataque o ataque pendiente.
 - `aiTargeting`: busca el objetivo válido más cercano para una entidad `AIControlled` usando facción, distancia, `DefenseProfile` y componentes requeridos.
-- `meleeAttackRequests`: construye requests de ataque melee desde input del jugador e IA, sin resolver daño ni fases de acción.
+- `meleeAttackRequests`: construye requests de ataque melee desde commands del jugador e IA, sin resolver daño ni fases de acción.
+
+## Game helpers existentes
+
+- `playerQueries`: contiene queries de jugador, como `findPlayerEntity`.
+- `buildUiSnapshot`: prepara datos de solo lectura para UI.
 
 ## Factories/setup existentes
 
@@ -132,12 +145,16 @@ Ninguno.
 - `src/app/main.js`
 - `src/ecs/world.js`
 - `src/domain/components.js`
+- `src/domain/commands.js`
 - `src/domain/rules/damageRules.js`
 - `src/domain/rules/attackRules.js`
 - `src/domain/rules/geometryRules.js`
 - `src/game/createPlayer.js`
 - `src/game/createEnemy.js`
+- `src/game/playerQueries.js`
+- `src/game/buildUiSnapshot.js`
 - `src/input/keyboardInput.js`
+- `src/input/mouseInput.js`
 - `src/world/tilemap.js`
 - `src/simulation/runSimulationStep.js`
 - `src/simulation/playerControlSystem.js`
@@ -150,28 +167,30 @@ Ninguno.
 - `src/simulation/actionEconomySystem.js`
 - `src/simulation/meleeCombatSystem.js`
 - `src/simulation/deathSystem.js`
+- `src/ui/hudUi.js`
 - `src/render/canvasRenderer.js`
 - `src/render/drawMap.js`
 - `src/render/drawEntities.js`
 
 ## Próximo objetivo
 
-Milestone 5: Menú táctico pausado.
+Milestone 5.1: modo táctico pausado mínimo.
 
 Crear:
 
-- Capa UI mínima para acciones.
-- Pausa táctica single-player.
-- Botones de acción.
-- Confirmación de acción mediante intent/command o request equivalente, sin aplicar reglas desde UI.
+- Tecla separada para entrar/salir de modo táctico.
+- Pausa táctica single-player desde app/game loop, no desde simulation.
+- Panel compacto de acciones.
+- Confirmación de acción mediante command.
 - Separación estricta entre UI y simulation.
 
 ## Riesgos actuales
 
 - La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
-- El ataque tiene fases, pero no hay feedback visual de `windup` o `recovery`; si se vuelve ilegible, debe tratarse en un scope separado.
+- El ataque tiene fases, pero el feedback visual todavía es mínimo.
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
+- El click izquierdo queda definido como acción primaria del modo de juego; cuando exista inventario/UI interactiva, la capa app/UI deberá poder capturar clicks para no enviarlos como comandos de combate.
 - Sobrecargar `runSimulationStep` con lógica que debería vivir en sistemas específicos.
 - Convertir `Renderable` en una bolsa de datos visuales demasiado amplia sin diseñar renderer/content.
 - Sobrecargar `movementCollision` si se intenta resolver ahí colisiones generales de proyectiles/criaturas/puertas antes de diseñar `collisionSystem`.
@@ -182,10 +201,17 @@ Crear:
 
 ## Decisiones recientes
 
+- Milestone 5 parcial movió el ataque del jugador desde `Space` a click izquierdo.
+- Se introdujo `AttackCommand` como primer command mínimo.
+- `mouseInput` produce intención de acción primaria, pero no modifica ECS ni aplica daño.
+- `keyboardInput` queda dedicado al movimiento por teclado.
+- `hudUi` muestra feedback visual mínimo sin aplicar reglas.
+- `buildUiSnapshot` prepara datos de solo lectura para UI.
+- `playerQueries` centraliza la consulta de entidad jugador.
 - Milestone 4 introdujo `AIControlled` y `aiSystem`.
 - El enemigo puede detectar, perseguir y atacar al jugador usando la misma estructura melee que el jugador.
 - `meleeCombatSystem` procesa requests de ataque genéricas y ya no decide si una request viene del jugador o de IA.
-- `meleeAttackRequests` construye requests de ataque desde input del jugador e IA.
+- `meleeAttackRequests` construye requests de ataque desde commands del jugador e IA.
 - `aiTargeting` centraliza búsqueda de objetivo válido para IA.
 - `geometryRules` centraliza geometría pura compartida por targeting y reglas de ataque.
 - Milestone 3.5 introdujo `windup` y `recovery` para ataques melee.
@@ -194,15 +220,13 @@ Crear:
 - `ActionEconomy` ahora modela `currentAction`, `phase`, `timeRemaining` y `pendingAttack`.
 - `AttackProfile` ahora usa `windupSeconds` y `recoverySeconds` en lugar de `cooldownSeconds`.
 - Se eliminó `src/simulation/basicAttackSystem.js`.
-- Se limpió el flujo activo post-Milestone 3: `main.js` usa `attackIntent`, `runSimulationStep` recibe `attackIntent`, e input expone solo `consumeAttackIntent`.
 - Milestone 3 introdujo combate melee mínimo con cooldown.
 - Se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`.
 - Se agregó `actionEconomySystem` para reducir timers de acción por frame.
 - Se agregó `meleeCombatSystem` para procesar ataques melee.
 - Se agregó `meleeHitDetection` como helper de detección melee.
 - `DamageReduction` mitiga daño con reducción plana.
-- Input produce un intent consumible de ataque con `Space`, pero no aplica daño.
-- No se crearon commands ni events todavía.
+- No se crearon events todavía.
 - No se creó command buffer ni event bus todavía.
 - No se implementó UI compleja ni assets externos.
 - Se dividió el render de canvas en `canvasRenderer`, `drawMap` y `drawEntities`.
