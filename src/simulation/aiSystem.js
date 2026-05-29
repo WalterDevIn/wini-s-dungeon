@@ -1,6 +1,9 @@
 import { getComponent, queryEntities } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
-import { getDistanceBetweenRects } from "../domain/rules/geometryRules.js";
+import {
+  getDistanceBetweenRects,
+  getRectCenter,
+} from "../domain/rules/geometryRules.js";
 import { findClosestAiTarget } from "./helpers/aiTargeting.js";
 
 export function aiSystem(world) {
@@ -51,6 +54,9 @@ function updateAiMovement(world, entityId, targetId) {
     return;
   }
 
-  velocity.x = ((targetPosition.x - position.x) / distance) * movementStats.speed;
-  velocity.y = ((targetPosition.y - position.y) / distance) * movementStats.speed;
+  const center = getRectCenter(position, collider);
+  const targetCenter = getRectCenter(targetPosition, targetCollider);
+
+  velocity.x = ((targetCenter.x - center.x) / distance) * movementStats.speed;
+  velocity.y = ((targetCenter.y - center.y) / distance) * movementStats.speed;
 }
