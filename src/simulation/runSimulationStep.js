@@ -1,6 +1,7 @@
 import { playerControlSystem } from "./playerControlSystem.js";
 import { movementSystem } from "./movementSystem.js";
-import { basicAttackSystem } from "./basicAttackSystem.js";
+import { actionEconomySystem } from "./actionEconomySystem.js";
+import { meleeCombatSystem } from "./meleeCombatSystem.js";
 import { deathSystem } from "./deathSystem.js";
 
 export function runSimulationStep({
@@ -9,9 +10,11 @@ export function runSimulationStep({
   deltaSeconds,
   movementIntent,
   basicAttackIntent,
+  attackIntent = basicAttackIntent,
 }) {
   playerControlSystem(world, movementIntent);
   movementSystem(world, tilemap, deltaSeconds);
-  basicAttackSystem(world, basicAttackIntent);
+  actionEconomySystem(world, deltaSeconds);
+  meleeCombatSystem(world, attackIntent);
   deathSystem(world);
 }
