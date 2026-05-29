@@ -23,10 +23,12 @@ export function createPlayer(world) {
     [
       ComponentType.Renderable,
       Renderable({
-        shape: "rect",
+        shape: "glyph",
+        glyph: "@",
         width: PLAYER_SIZE,
         height: PLAYER_SIZE,
-        color: "#f2c166",
+        color: "#f5e6b8",
+        fontSize: 34,
       }),
     ],
     [
