@@ -14,6 +14,8 @@ El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa
 
 El juego ahora tiene vida, daño mínimo, facciones, criatura jugador, enemigo quieto y muerte/remoción de entidad. El jugador puede usar un ataque básico temporal con `Space` para dañar al enemigo si está cerca; después de suficientes golpes, el enemigo muere y desaparece.
 
+Se aplicó un refactor de render y colisión pre-Milestone 3: el dibujo de mapa y entidades fue separado desde `canvasRenderer.js` hacia `drawMap.js` y `drawEntities.js`, y la resolución de movimiento contra tiles fue extraída desde `movementSystem.js` hacia `simulation/helpers/movementCollision.js`.
+
 Se aplicó un cambio visual pre-Milestone 3: el renderer dibuja una estética roguelike mínima con tiles de pared como `#`, piso con puntos tenues, grilla translúcida y entidades como glyphs sobre canvas. Este cambio no modifica simulation, input, ECS, world, daño, movimiento ni colisión.
 
 Se aplicó un refactor arquitectónico post-Milestone 2: la simulación del frame ahora se orquesta desde `runSimulationStep(...)`, `src/app/main.js` ya no conoce el orden interno de los sistemas de simulation, y las reglas puras de daño/rango fueron extraídas a `src/domain/rules/`.
@@ -27,7 +29,7 @@ Todavía no hay combate melee completo, cooldowns, economía de acciones, IA ene
 ## Sistemas existentes
 
 - `playerControlSystem`: convierte movement intent en velocidad para entidades `PlayerControlled`.
-- `movementSystem`: aplica movimiento con `deltaSeconds` y colisión básica contra tilemap.
+- `movementSystem`: aplica movimiento con `deltaSeconds` y delega la resolución contra tiles a `movementCollision`.
 - `basicAttackSystem`: aplica daño fijo básico a una criatura de facción enemiga cercana cuando recibe un intent de ataque básico.
 - `deathSystem`: remueve entidades con `Health.current <= 0`.
 - `runSimulationStep`: orquesta el orden de sistemas de simulation para un frame.
@@ -77,10 +79,11 @@ Ninguno.
 ## Render existente
 
 - Canvas renderer mínimo.
-- Dibuja tilemap con estética roguelike mínima.
+- `canvasRenderer` coordina resize, limpieza de frame, dibujo de mapa y dibujo de entidades.
+- `drawMap` dibuja tilemap con estética roguelike mínima.
+- `drawEntities` dibuja entidades con `Position` + `Renderable`.
 - Dibuja paredes como `#`.
 - Dibuja piso con puntos tenues y grilla translúcida.
-- Dibuja entidades con `Position` + `Renderable`.
 - Soporta `Renderable` con `shape: "glyph"` y fallback rectangular.
 - Render no modifica estado de juego.
 
@@ -93,6 +96,10 @@ Ninguno.
 - `addComponents`: agrega varios componentes a una entidad usando pares `[componentType, componentData]`.
 - `getComponent`: obtiene un componente de una entidad.
 - `queryEntities`: consulta entidades por componentes.
+
+## Simulation helpers existentes
+
+- `movementCollision`: resuelve movimiento por eje contra tilemap usando colisión de tiles.
 
 ## Factories/setup existentes
 
@@ -115,9 +122,12 @@ Ninguno.
 - `src/simulation/runSimulationStep.js`
 - `src/simulation/playerControlSystem.js`
 - `src/simulation/movementSystem.js`
+- `src/simulation/helpers/movementCollision.js`
 - `src/simulation/basicAttackSystem.js`
 - `src/simulation/deathSystem.js`
 - `src/render/canvasRenderer.js`
+- `src/render/drawMap.js`
+- `src/render/drawEntities.js`
 
 ## Próximo objetivo
 
@@ -139,6 +149,8 @@ Crear:
 - Crear combate melee completo antes de diseñar economía de acciones y cooldowns.
 - Sobrecargar `runSimulationStep` con lógica que debería vivir en sistemas específicos.
 - Convertir `Renderable` en una bolsa de datos visuales demasiado amplia sin diseñar renderer/content.
+- Sobrecargar `drawEntities` si se agregan sprites, animaciones o capas sin scope.
+- Sobrecargar `movementCollision` si se intenta resolver ahí colisiones generales de proyectiles/criaturas/puertas antes de diseñar `collisionSystem`.
 - Sobrecargar `src/game/createPlayer.js` o `src/game/createEnemy.js` con lógica que debería vivir en content/domain si las entidades crecen demasiado.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
@@ -147,6 +159,11 @@ Crear:
 
 ## Decisiones recientes
 
+- Se dividió el render de canvas en `canvasRenderer`, `drawMap` y `drawEntities`.
+- Se extrajo la resolución de movimiento contra tiles a `simulation/helpers/movementCollision.js`.
+- `movementSystem` queda como sistema ECS de movimiento y delega detalles de colisión.
+- `runSimulationStep.js` se conserva en `simulation/`, alineado con la arquitectura objetivo.
+- No se creó `collisionSystem` todavía; se reservó para cuando existan colisiones dinámicas más generales.
 - Se aplicó estética roguelike mínima sin tocar simulation/input/ECS/world/rules.
 - `Renderable` ahora puede representar glyphs visuales mediante `shape: "glyph"`, `glyph` y `fontSize`.
 - El jugador se dibuja como `@`.
