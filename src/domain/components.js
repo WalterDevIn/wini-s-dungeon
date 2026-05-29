@@ -8,6 +8,10 @@ export const ComponentType = Object.freeze({
   Health: "Health",
   Creature: "Creature",
   Faction: "Faction",
+  ActionEconomy: "ActionEconomy",
+  AttackProfile: "AttackProfile",
+  DefenseProfile: "DefenseProfile",
+  DamageReduction: "DamageReduction",
 });
 
 export function Position(x, y) {
@@ -51,4 +55,20 @@ export function Creature({ kind }) {
 
 export function Faction({ id }) {
   return { id };
+}
+
+export function ActionEconomy({ attackCooldownRemaining = 0 } = {}) {
+  return { attackCooldownRemaining };
+}
+
+export function AttackProfile({ damage, range, cooldownSeconds }) {
+  return { damage, range, cooldownSeconds };
+}
+
+export function DefenseProfile({ canBeHit = true } = {}) {
+  return { canBeHit };
+}
+
+export function DamageReduction({ flat = 0 } = {}) {
+  return { flat };
 }
