@@ -6,7 +6,7 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 ## Estado actual
 
-Milestone 3 completado con deuda menor documentada.
+Milestone 3 completado.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -14,17 +14,15 @@ El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa
 
 El juego ahora tiene vida, daño, facciones, criatura jugador, enemigo quieto, muerte/remoción de entidad y combate melee mínimo con cooldown. El jugador puede usar `Space` para atacar; el enemigo solo recibe daño si está en rango melee y si el cooldown de ataque está disponible.
 
-Se aplicó Milestone 3: se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`; se agregó cooldown de ataque; se reemplazó el flujo activo de ataque básico por `meleeCombatSystem`; y el daño pasa por reducción plana.
+Se aplicó Milestone 3: se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`; se agregó cooldown de ataque; se reemplazó el ataque básico de prueba por `meleeCombatSystem`; y el daño pasa por reducción plana.
 
-Se aplicó limpieza parcial post-Milestone 3: `src/app/main.js` ya usa `consumeAttackIntent()` y pasa `attackIntent` a `runSimulationStep`; `keyboardInput.js` ya no expone el alias temporal `consumeTestAttackIntent`; `runSimulationStep` ya no acepta `basicAttackIntent`.
-
-Deuda menor: `src/simulation/basicAttackSystem.js` quedó físicamente en el repo porque la eliminación fue bloqueada por la herramienta. No está conectado a `runSimulationStep` y debe eliminarse manualmente o en un intento posterior si la herramienta lo permite.
+Se aplicó limpieza post-Milestone 3: `src/app/main.js` usa `consumeAttackIntent()` y pasa `attackIntent` a `runSimulationStep`; `keyboardInput.js` no expone alias temporales; `runSimulationStep` no acepta nombres temporales; y `src/simulation/basicAttackSystem.js` fue eliminado.
 
 Se aplicó un refactor de render y colisión pre-Milestone 3: el dibujo de mapa y entidades fue separado desde `canvasRenderer.js` hacia `drawMap.js` y `drawEntities.js`, y la resolución de movimiento contra tiles fue extraída desde `movementSystem.js` hacia `simulation/helpers/movementCollision.js`.
 
 Se aplicó un cambio visual pre-Milestone 3: el renderer dibuja una estética roguelike mínima con tiles de pared como `#`, piso con puntos tenues, grilla translúcida y entidades como glyphs sobre canvas.
 
-Se aplicó un refactor arquitectónico post-Milestone 2: la simulación del frame ahora se orquesta desde `runSimulationStep(...)`, `src/app/main.js` ya no conoce el orden interno de los sistemas de simulation, y las reglas puras de daño/rango fueron extraídas a `src/domain/rules/`.
+Se aplicó un refactor arquitectónico post-Milestone 2: la simulación del frame ahora se orquesta desde `runSimulationStep(...)`, `src/app/main.js` no conoce el orden interno detallado de render ni contiene reglas de simulación, y las reglas puras de daño/rango viven en `src/domain/rules/`.
 
 Todavía no hay IA enemiga, ataque enemigo, conjuros, menú táctico, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
@@ -36,10 +34,6 @@ Todavía no hay IA enemiga, ataque enemigo, conjuros, menú táctico, inventario
 - `meleeCombatSystem`: procesa ataque melee del jugador, valida cooldown, busca objetivo en rango, aplica daño mitigado y reinicia cooldown.
 - `deathSystem`: remueve entidades con `Health.current <= 0`.
 - `runSimulationStep`: orquesta el orden de sistemas de simulation para un frame.
-
-## Sistemas obsoletos pendientes de eliminar
-
-- `basicAttackSystem`: quedó desconectado del loop. Debe eliminarse manualmente o en una limpieza posterior si la herramienta lo permite.
 
 ## Componentes existentes
 
@@ -138,7 +132,6 @@ Ninguno.
 - `src/simulation/helpers/meleeHitDetection.js`
 - `src/simulation/actionEconomySystem.js`
 - `src/simulation/meleeCombatSystem.js`
-- `src/simulation/basicAttackSystem.js`
 - `src/simulation/deathSystem.js`
 - `src/render/canvasRenderer.js`
 - `src/render/drawMap.js`
@@ -146,11 +139,7 @@ Ninguno.
 
 ## Próximo objetivo
 
-Limpieza inmediata post-Milestone 3:
-
-- Eliminar `src/simulation/basicAttackSystem.js`.
-
-Luego: Milestone 4: IA simple.
+Milestone 4: IA simple.
 
 Crear:
 
@@ -161,9 +150,9 @@ Crear:
 
 ## Riesgos actuales
 
-- `basicAttackSystem` quedó como archivo obsoleto y debe eliminarse pronto para evitar confusión.
-- Crear IA enemiga antes de eliminar el archivo obsoleto.
-- Sobrecargar `meleeCombatSystem` con ataque enemigo, IA, efectos, knockback o feedback visual sin scope.
+- `meleeCombatSystem` todavía está centrado en el jugador porque busca atacantes con `PlayerControlled`; Milestone 4 debe generalizarlo sin duplicar lógica de combate.
+- Decidir explícitamente si un ataque fuera de rango consume cooldown. Actualmente el ataque puede consumir cooldown aunque no encuentre objetivo válido.
+- Sobrecargar `meleeCombatSystem` con IA, efectos, knockback o feedback visual sin scope.
 - Sobrecargar `runSimulationStep` con lógica que debería vivir en sistemas específicos.
 - Convertir `Renderable` en una bolsa de datos visuales demasiado amplia sin diseñar renderer/content.
 - Sobrecargar `movementCollision` si se intenta resolver ahí colisiones generales de proyectiles/criaturas/puertas antes de diseñar `collisionSystem`.
@@ -174,8 +163,8 @@ Crear:
 
 ## Decisiones recientes
 
+- Se eliminó `src/simulation/basicAttackSystem.js`.
 - Se limpió el flujo activo post-Milestone 3: `main.js` usa `attackIntent`, `runSimulationStep` recibe `attackIntent`, e input expone solo `consumeAttackIntent`.
-- La eliminación física de `basicAttackSystem` fue bloqueada por la herramienta; quedó desconectado y documentado como archivo obsoleto.
 - Milestone 3 introdujo combate melee mínimo con cooldown.
 - Se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`.
 - Se agregó `actionEconomySystem` para reducir cooldowns por frame.
