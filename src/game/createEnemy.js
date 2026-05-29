@@ -19,10 +19,12 @@ export function createEnemy(world) {
     [
       ComponentType.Renderable,
       Renderable({
-        shape: "rect",
+        shape: "glyph",
+        glyph: "e",
         width: ENEMY_SIZE,
         height: ENEMY_SIZE,
-        color: "#c95f5f",
+        color: "#ff6b6b",
+        fontSize: 32,
       }),
     ],
     [
