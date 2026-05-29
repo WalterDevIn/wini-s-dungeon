@@ -1,8 +1,12 @@
 import { addComponents, createEntity } from "../ecs/world.js";
 import {
+  ActionEconomy,
+  AttackProfile,
   Collider,
   ComponentType,
   Creature,
+  DamageReduction,
+  DefenseProfile,
   Faction,
   Health,
   MovementStats,
@@ -43,6 +47,13 @@ export function createPlayer(world) {
     [ComponentType.Health, Health({ current: 10, max: 10 })],
     [ComponentType.Creature, Creature({ kind: "player" })],
     [ComponentType.Faction, Faction({ id: "player" })],
+    [ComponentType.ActionEconomy, ActionEconomy()],
+    [
+      ComponentType.AttackProfile,
+      AttackProfile({ damage: 2, range: 48, cooldownSeconds: 0.45 }),
+    ],
+    [ComponentType.DefenseProfile, DefenseProfile()],
+    [ComponentType.DamageReduction, DamageReduction({ flat: 0 })],
   ]);
 
   return player;
