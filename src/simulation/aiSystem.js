@@ -1,5 +1,7 @@
 import { getComponent, queryEntities } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
+import { getDistanceBetweenRects } from "../domain/rules/geometryRules.js";
+import { findClosestAiTarget } from "./helpers/aiTargeting.js";
 
 export function aiSystem(world) {
   const aiEntities = queryEntities(world, [
@@ -15,7 +17,7 @@ export function aiSystem(world) {
 
   for (const entityId of aiEntities) {
     const aiControlled = getComponent(world, entityId, ComponentType.AIControlled);
-    const targetId = findClosestTarget(world, entityId, aiControlled);
+    const targetId = findClosestAiTarget(world, entityId, aiControlled);
     const velocity = getComponent(world, entityId, ComponentType.Velocity);
 
     velocity.x = 0;
@@ -27,58 +29,6 @@ export function aiSystem(world) {
 
     updateAiMovement(world, entityId, targetId);
   }
-}
-
-function findClosestTarget(world, aiEntityId, aiControlled) {
-  const aiPosition = getComponent(world, aiEntityId, ComponentType.Position);
-  const aiCollider = getComponent(world, aiEntityId, ComponentType.Collider);
-  const aiCenter = getRectCenter(aiPosition, aiCollider);
-
-  const targets = queryEntities(world, [
-    ComponentType.Health,
-    ComponentType.Creature,
-    ComponentType.Faction,
-    ComponentType.Position,
-    ComponentType.Collider,
-    ComponentType.DefenseProfile,
-  ]);
-
-  let closestTargetId = null;
-  let closestDistance = Infinity;
-
-  for (const targetId of targets) {
-    if (targetId === aiEntityId) {
-      continue;
-    }
-
-    const targetFaction = getComponent(world, targetId, ComponentType.Faction);
-
-    if (targetFaction.id !== aiControlled.targetFactionId) {
-      continue;
-    }
-
-    const defenseProfile = getComponent(world, targetId, ComponentType.DefenseProfile);
-
-    if (!defenseProfile.canBeHit) {
-      continue;
-    }
-
-    const targetPosition = getComponent(world, targetId, ComponentType.Position);
-    const targetCollider = getComponent(world, targetId, ComponentType.Collider);
-    const targetCenter = getRectCenter(targetPosition, targetCollider);
-    const distance = Math.hypot(targetCenter.x - aiCenter.x, targetCenter.y - aiCenter.y);
-
-    if (distance > aiControlled.detectionRange) {
-      continue;
-    }
-
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestTargetId = targetId;
-    }
-  }
-
-  return closestTargetId;
 }
 
 function updateAiMovement(world, entityId, targetId) {
@@ -95,23 +45,12 @@ function updateAiMovement(world, entityId, targetId) {
     return;
   }
 
-  const center = getRectCenter(position, collider);
-  const targetCenter = getRectCenter(targetPosition, targetCollider);
-  const deltaX = targetCenter.x - center.x;
-  const deltaY = targetCenter.y - center.y;
-  const distance = Math.hypot(deltaX, deltaY);
+  const distance = getDistanceBetweenRects(position, collider, targetPosition, targetCollider);
 
   if (distance === 0 || distance <= attackProfile.range * 0.9) {
     return;
   }
 
-  velocity.x = (deltaX / distance) * movementStats.speed;
-  velocity.y = (deltaY / distance) * movementStats.speed;
-}
-
-function getRectCenter(position, collider) {
-  return {
-    x: position.x + collider.width / 2,
-    y: position.y + collider.height / 2,
-  };
+  velocity.x = ((targetPosition.x - position.x) / distance) * movementStats.speed;
+  velocity.y = ((targetPosition.y - position.y) / distance) * movementStats.speed;
 }
