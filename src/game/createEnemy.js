@@ -3,6 +3,8 @@ import {
   Collider,
   ComponentType,
   Creature,
+  DamageReduction,
+  DefenseProfile,
   Faction,
   Health,
   Position,
@@ -34,9 +36,11 @@ export function createEnemy(world) {
         height: ENEMY_SIZE,
       }),
     ],
-    [ComponentType.Health, Health({ current: 3, max: 3 })],
+    [ComponentType.Health, Health({ current: 6, max: 6 })],
     [ComponentType.Creature, Creature({ kind: "enemy" })],
     [ComponentType.Faction, Faction({ id: "enemy" })],
+    [ComponentType.DefenseProfile, DefenseProfile()],
+    [ComponentType.DamageReduction, DamageReduction({ flat: 1 })],
   ]);
 
   return enemy;
