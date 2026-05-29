@@ -50,7 +50,12 @@ export function createPlayer(world) {
     [ComponentType.ActionEconomy, ActionEconomy()],
     [
       ComponentType.AttackProfile,
-      AttackProfile({ damage: 2, range: 48, cooldownSeconds: 0.45 }),
+      AttackProfile({
+        damage: 2,
+        range: 48,
+        windupSeconds: 0.1,
+        recoverySeconds: 0.35,
+      }),
     ],
     [ComponentType.DefenseProfile, DefenseProfile()],
     [ComponentType.DamageReduction, DamageReduction({ flat: 0 })],
