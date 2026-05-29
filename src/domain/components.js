@@ -57,12 +57,17 @@ export function Faction({ id }) {
   return { id };
 }
 
-export function ActionEconomy({ attackCooldownRemaining = 0 } = {}) {
-  return { attackCooldownRemaining };
+export function ActionEconomy({
+  currentAction = null,
+  phase = null,
+  timeRemaining = 0,
+  pendingAttack = null,
+} = {}) {
+  return { currentAction, phase, timeRemaining, pendingAttack };
 }
 
-export function AttackProfile({ damage, range, cooldownSeconds }) {
-  return { damage, range, cooldownSeconds };
+export function AttackProfile({ damage, range, windupSeconds, recoverySeconds }) {
+  return { damage, range, windupSeconds, recoverySeconds };
 }
 
 export function DefenseProfile({ canBeHit = true } = {}) {
