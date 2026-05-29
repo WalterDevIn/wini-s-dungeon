@@ -6,15 +6,19 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 ## Estado actual
 
-Milestone 3 completado.
+Milestone 3.5 completado.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
 
-El juego ahora tiene vida, daño, facciones, criatura jugador, enemigo quieto, muerte/remoción de entidad y combate melee mínimo con cooldown. El jugador puede usar `Space` para atacar; el enemigo solo recibe daño si está en rango melee y si el cooldown de ataque está disponible.
+El juego ahora tiene vida, daño, facciones, criatura jugador, enemigo quieto, muerte/remoción de entidad y combate melee mínimo con fases. El jugador puede usar `Space` para iniciar un ataque melee; el ataque entra en `windup`, luego resuelve impacto contra el estado actual del mundo, y después entra en `recovery`.
 
-Se aplicó Milestone 3: se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`; se agregó cooldown de ataque; se reemplazó el ataque básico de prueba por `meleeCombatSystem`; y el daño pasa por reducción plana.
+Regla actual de ataque melee: un ataque confirmado consume la acción aunque no impacte. El daño solo se aplica si, al terminar el `windup`, existe un objetivo enemigo válido dentro del alcance.
+
+Se aplicó Milestone 3.5: `ActionEconomy` dejó de ser solo un cooldown numérico y ahora representa acción actual, fase, tiempo restante y ataque pendiente. `AttackProfile` separa `windupSeconds` y `recoverySeconds`. `meleeCombatSystem` ya no aplica daño instantáneo al recibir input; inicia la acción, resuelve el impacto después del `windup` y libera al actor después del `recovery`.
+
+Se aplicó Milestone 3: se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`; se agregó combate melee mínimo; se reemplazó el ataque básico de prueba por `meleeCombatSystem`; y el daño pasa por reducción plana.
 
 Se aplicó limpieza post-Milestone 3: `src/app/main.js` usa `consumeAttackIntent()` y pasa `attackIntent` a `runSimulationStep`; `keyboardInput.js` no expone alias temporales; `runSimulationStep` no acepta nombres temporales; y `src/simulation/basicAttackSystem.js` fue eliminado.
 
@@ -30,8 +34,8 @@ Todavía no hay IA enemiga, ataque enemigo, conjuros, menú táctico, inventario
 
 - `playerControlSystem`: convierte movement intent en velocidad para entidades `PlayerControlled`.
 - `movementSystem`: aplica movimiento con `deltaSeconds` y delega la resolución contra tiles a `movementCollision`.
-- `actionEconomySystem`: reduce cooldowns de acción por frame.
-- `meleeCombatSystem`: procesa ataque melee del jugador, valida cooldown, busca objetivo en rango, aplica daño mitigado y reinicia cooldown.
+- `actionEconomySystem`: reduce el tiempo restante de acciones en curso.
+- `meleeCombatSystem`: procesa intent de ataque melee del jugador, inicia `windup`, resuelve impacto al terminar el `windup`, aplica daño mitigado si hay objetivo válido y gestiona `recovery`.
 - `deathSystem`: remueve entidades con `Health.current <= 0`.
 - `runSimulationStep`: orquesta el orden de sistemas de simulation para un frame.
 
@@ -105,7 +109,7 @@ Ninguno.
 ## Simulation helpers existentes
 
 - `movementCollision`: resuelve movimiento por eje contra tilemap usando colisión de tiles.
-- `meleeHitDetection`: busca el primer objetivo melee válido para un atacante y un perfil de ataque.
+- `meleeHitDetection`: busca el primer objetivo melee válido para un atacante y un perfil de ataque o ataque pendiente.
 
 ## Factories/setup existentes
 
@@ -145,13 +149,13 @@ Crear:
 
 - `AIControlled`.
 - Sistema de persecución simple.
-- Ataque enemigo.
+- Ataque enemigo usando la misma estructura de acción melee con `windup` y `recovery`.
 - Faction filtering.
 
 ## Riesgos actuales
 
 - `meleeCombatSystem` todavía está centrado en el jugador porque busca atacantes con `PlayerControlled`; Milestone 4 debe generalizarlo sin duplicar lógica de combate.
-- Decidir explícitamente si un ataque fuera de rango consume cooldown. Actualmente el ataque puede consumir cooldown aunque no encuentre objetivo válido.
+- El ataque ya tiene fases, pero no hay feedback visual de `windup` o `recovery`; si se vuelve ilegible, debe tratarse en un scope separado.
 - Sobrecargar `meleeCombatSystem` con IA, efectos, knockback o feedback visual sin scope.
 - Sobrecargar `runSimulationStep` con lógica que debería vivir en sistemas específicos.
 - Convertir `Renderable` en una bolsa de datos visuales demasiado amplia sin diseñar renderer/content.
@@ -163,11 +167,16 @@ Crear:
 
 ## Decisiones recientes
 
+- Milestone 3.5 introdujo `windup` y `recovery` para ataques melee.
+- Un ataque melee confirmado consume la acción aunque no impacte.
+- El daño de melee se resuelve contra el estado actual del mundo al terminar el `windup`, no al presionar la tecla.
+- `ActionEconomy` ahora modela `currentAction`, `phase`, `timeRemaining` y `pendingAttack`.
+- `AttackProfile` ahora usa `windupSeconds` y `recoverySeconds` en lugar de `cooldownSeconds`.
 - Se eliminó `src/simulation/basicAttackSystem.js`.
 - Se limpió el flujo activo post-Milestone 3: `main.js` usa `attackIntent`, `runSimulationStep` recibe `attackIntent`, e input expone solo `consumeAttackIntent`.
 - Milestone 3 introdujo combate melee mínimo con cooldown.
 - Se agregaron `ActionEconomy`, `AttackProfile`, `DefenseProfile` y `DamageReduction`.
-- Se agregó `actionEconomySystem` para reducir cooldowns por frame.
+- Se agregó `actionEconomySystem` para reducir timers de acción por frame.
 - Se agregó `meleeCombatSystem` para procesar ataques melee del jugador.
 - Se agregó `meleeHitDetection` como helper de detección melee.
 - `DamageReduction` mitiga daño con reducción plana.
