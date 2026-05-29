@@ -1,20 +1,12 @@
 import { getComponent, queryEntities } from "../../ecs/world.js";
+import { CommandType } from "../../domain/commands.js";
 import { ComponentType } from "../../domain/components.js";
 import { findFirstMeleeTarget } from "./meleeHitDetection.js";
 
-export function createPlayerMeleeAttackRequests(world, attackIntent) {
-  if (!attackIntent) {
-    return [];
-  }
-
-  return queryEntities(world, [
-    ComponentType.PlayerControlled,
-    ComponentType.ActionEconomy,
-    ComponentType.AttackProfile,
-    ComponentType.Position,
-    ComponentType.Collider,
-    ComponentType.Faction,
-  ]);
+export function createPlayerMeleeAttackRequests(commands) {
+  return commands
+    .filter((command) => command.type === CommandType.Attack)
+    .map((command) => command.actorId);
 }
 
 export function createAiMeleeAttackRequests(world) {
