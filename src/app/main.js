@@ -31,7 +31,7 @@ function frame(currentTime) {
     tilemap,
     deltaSeconds,
     movementIntent: keyboardInput.getMovementIntent(),
-    basicAttackIntent: keyboardInput.consumeTestAttackIntent(),
+    attackIntent: keyboardInput.consumeAttackIntent(),
   });
 
   renderer.render(world, tilemap);
