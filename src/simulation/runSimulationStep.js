@@ -2,11 +2,11 @@ import { playerControlSystem } from "./playerControlSystem.js";
 import { aiSystem } from "./aiSystem.js";
 import { movementSystem } from "./movementSystem.js";
 import { actionEconomySystem } from "./actionEconomySystem.js";
+import { meleeCombatSystem } from "./meleeCombatSystem.js";
 import {
   createAiMeleeAttackRequests,
   createPlayerMeleeAttackRequests,
-  meleeCombatSystem,
-} from "./meleeCombatSystem.js";
+} from "./helpers/meleeAttackRequests.js";
 import { deathSystem } from "./deathSystem.js";
 
 export function runSimulationStep({
