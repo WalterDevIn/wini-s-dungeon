@@ -5,6 +5,7 @@ export const ComponentType = Object.freeze({
   Collider: "Collider",
   MovementStats: "MovementStats",
   PlayerControlled: "PlayerControlled",
+  AIControlled: "AIControlled",
   Health: "Health",
   Creature: "Creature",
   Faction: "Faction",
@@ -43,6 +44,10 @@ export function MovementStats({ speed }) {
 
 export function PlayerControlled() {
   return { enabled: true };
+}
+
+export function AIControlled({ detectionRange, targetFactionId }) {
+  return { detectionRange, targetFactionId };
 }
 
 export function Health({ current, max }) {
