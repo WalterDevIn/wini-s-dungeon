@@ -22,7 +22,7 @@ export function createEnemy(world) {
   const enemy = createEntity(world);
 
   addComponents(world, enemy, [
-    [ComponentType.Position, Position(336, 192)],
+    [ComponentType.Position, Position(240, 192)],
     [ComponentType.Velocity, Velocity()],
     [
       ComponentType.Renderable,
