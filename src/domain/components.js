@@ -18,8 +18,15 @@ export function Velocity(x = 0, y = 0) {
   return { x, y };
 }
 
-export function Renderable({ shape = "rect", width, height, color }) {
-  return { shape, width, height, color };
+export function Renderable({
+  shape = "rect",
+  width,
+  height,
+  color,
+  glyph = null,
+  fontSize = null,
+}) {
+  return { shape, width, height, color, glyph, fontSize };
 }
 
 export function Collider({ width, height }) {
