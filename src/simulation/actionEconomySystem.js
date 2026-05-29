@@ -7,9 +7,13 @@ export function actionEconomySystem(world, deltaSeconds) {
   for (const entityId of entities) {
     const actionEconomy = getComponent(world, entityId, ComponentType.ActionEconomy);
 
-    actionEconomy.attackCooldownRemaining = Math.max(
+    if (!actionEconomy.currentAction) {
+      continue;
+    }
+
+    actionEconomy.timeRemaining = Math.max(
       0,
-      actionEconomy.attackCooldownRemaining - deltaSeconds,
+      actionEconomy.timeRemaining - deltaSeconds,
     );
   }
 }
