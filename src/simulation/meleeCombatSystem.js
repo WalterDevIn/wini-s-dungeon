@@ -29,42 +29,6 @@ export function meleeCombatSystem(world, attackRequests = []) {
   }
 }
 
-export function createPlayerMeleeAttackRequests(world, attackIntent) {
-  if (!attackIntent) {
-    return [];
-  }
-
-  return queryEntities(world, [
-    ComponentType.PlayerControlled,
-    ComponentType.ActionEconomy,
-    ComponentType.AttackProfile,
-    ComponentType.Position,
-    ComponentType.Collider,
-    ComponentType.Faction,
-  ]);
-}
-
-export function createAiMeleeAttackRequests(world) {
-  const aiAttackers = queryEntities(world, [
-    ComponentType.AIControlled,
-    ComponentType.ActionEconomy,
-    ComponentType.AttackProfile,
-    ComponentType.Position,
-    ComponentType.Collider,
-    ComponentType.Faction,
-  ]);
-
-  return aiAttackers.filter((attackerId) => {
-    const actionEconomy = getComponent(world, attackerId, ComponentType.ActionEconomy);
-
-    if (actionEconomy.currentAction) {
-      return false;
-    }
-
-    return findFirstMeleeTarget(world, attackerId, getComponent(world, attackerId, ComponentType.AttackProfile)) !== null;
-  });
-}
-
 function startMeleeAttack(world, attackerId, actionEconomy) {
   if (actionEconomy.currentAction) {
     return;
