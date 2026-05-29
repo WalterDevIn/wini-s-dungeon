@@ -7,9 +7,8 @@ const MELEE_ATTACK_ACTION = "meleeAttack";
 const WINDUP_PHASE = "windup";
 const RECOVERY_PHASE = "recovery";
 
-export function meleeCombatSystem(world, attackIntent) {
+export function meleeCombatSystem(world, attackRequests = []) {
   const attackers = queryEntities(world, [
-    ComponentType.PlayerControlled,
     ComponentType.ActionEconomy,
     ComponentType.AttackProfile,
     ComponentType.Position,
@@ -17,15 +16,53 @@ export function meleeCombatSystem(world, attackIntent) {
     ComponentType.Faction,
   ]);
 
+  const requestedAttackers = new Set(attackRequests);
+
   for (const attackerId of attackers) {
     const actionEconomy = getComponent(world, attackerId, ComponentType.ActionEconomy);
 
     resolveMeleeAction(world, attackerId, actionEconomy);
 
-    if (attackIntent) {
+    if (requestedAttackers.has(attackerId)) {
       startMeleeAttack(world, attackerId, actionEconomy);
     }
   }
+}
+
+export function createPlayerMeleeAttackRequests(world, attackIntent) {
+  if (!attackIntent) {
+    return [];
+  }
+
+  return queryEntities(world, [
+    ComponentType.PlayerControlled,
+    ComponentType.ActionEconomy,
+    ComponentType.AttackProfile,
+    ComponentType.Position,
+    ComponentType.Collider,
+    ComponentType.Faction,
+  ]);
+}
+
+export function createAiMeleeAttackRequests(world) {
+  const aiAttackers = queryEntities(world, [
+    ComponentType.AIControlled,
+    ComponentType.ActionEconomy,
+    ComponentType.AttackProfile,
+    ComponentType.Position,
+    ComponentType.Collider,
+    ComponentType.Faction,
+  ]);
+
+  return aiAttackers.filter((attackerId) => {
+    const actionEconomy = getComponent(world, attackerId, ComponentType.ActionEconomy);
+
+    if (actionEconomy.currentAction) {
+      return false;
+    }
+
+    return findFirstMeleeTarget(world, attackerId, getComponent(world, attackerId, ComponentType.AttackProfile)) !== null;
+  });
 }
 
 function startMeleeAttack(world, attackerId, actionEconomy) {
