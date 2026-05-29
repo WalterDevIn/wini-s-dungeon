@@ -3,11 +3,11 @@ import { ComponentType } from "../domain/components.js";
 import { applyDamage } from "../domain/rules/damageRules.js";
 import { findFirstMeleeTarget } from "./helpers/meleeHitDetection.js";
 
-export function meleeCombatSystem(world, attackIntent) {
-  if (!attackIntent) {
-    return;
-  }
+const MELEE_ATTACK_ACTION = "meleeAttack";
+const WINDUP_PHASE = "windup";
+const RECOVERY_PHASE = "recovery";
 
+export function meleeCombatSystem(world, attackIntent) {
   const attackers = queryEntities(world, [
     ComponentType.PlayerControlled,
     ComponentType.ActionEconomy,
@@ -17,21 +17,57 @@ export function meleeCombatSystem(world, attackIntent) {
     ComponentType.Faction,
   ]);
 
-  if (attackers.length === 0) {
-    return;
+  for (const attackerId of attackers) {
+    const actionEconomy = getComponent(world, attackerId, ComponentType.ActionEconomy);
+
+    resolveMeleeAction(world, attackerId, actionEconomy);
+
+    if (attackIntent) {
+      startMeleeAttack(world, attackerId, actionEconomy);
+    }
   }
+}
 
-  const attackerId = attackers[0];
-  const actionEconomy = getComponent(world, attackerId, ComponentType.ActionEconomy);
-
-  if (actionEconomy.attackCooldownRemaining > 0) {
+function startMeleeAttack(world, attackerId, actionEconomy) {
+  if (actionEconomy.currentAction) {
     return;
   }
 
   const attackProfile = getComponent(world, attackerId, ComponentType.AttackProfile);
-  const targetId = findFirstMeleeTarget(world, attackerId, attackProfile);
 
-  actionEconomy.attackCooldownRemaining = attackProfile.cooldownSeconds;
+  actionEconomy.currentAction = MELEE_ATTACK_ACTION;
+  actionEconomy.phase = WINDUP_PHASE;
+  actionEconomy.timeRemaining = attackProfile.windupSeconds;
+  actionEconomy.pendingAttack = {
+    damage: attackProfile.damage,
+    range: attackProfile.range,
+    recoverySeconds: attackProfile.recoverySeconds,
+  };
+}
+
+function resolveMeleeAction(world, attackerId, actionEconomy) {
+  if (actionEconomy.currentAction !== MELEE_ATTACK_ACTION) {
+    return;
+  }
+
+  if (actionEconomy.timeRemaining > 0) {
+    return;
+  }
+
+  if (actionEconomy.phase === WINDUP_PHASE) {
+    resolveMeleeImpact(world, attackerId, actionEconomy);
+    actionEconomy.phase = RECOVERY_PHASE;
+    actionEconomy.timeRemaining = actionEconomy.pendingAttack.recoverySeconds;
+    return;
+  }
+
+  if (actionEconomy.phase === RECOVERY_PHASE) {
+    clearCurrentAction(actionEconomy);
+  }
+}
+
+function resolveMeleeImpact(world, attackerId, actionEconomy) {
+  const targetId = findFirstMeleeTarget(world, attackerId, actionEconomy.pendingAttack);
 
   if (targetId === null) {
     return;
@@ -44,5 +80,12 @@ export function meleeCombatSystem(world, attackIntent) {
     ComponentType.DamageReduction,
   );
 
-  applyDamage(targetHealth, attackProfile.damage, targetDamageReduction);
+  applyDamage(targetHealth, actionEconomy.pendingAttack.damage, targetDamageReduction);
+}
+
+function clearCurrentAction(actionEconomy) {
+  actionEconomy.currentAction = null;
+  actionEconomy.phase = null;
+  actionEconomy.timeRemaining = 0;
+  actionEconomy.pendingAttack = null;
 }
