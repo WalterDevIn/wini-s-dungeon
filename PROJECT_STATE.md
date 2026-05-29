@@ -14,6 +14,8 @@ El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa
 
 El juego ahora tiene vida, daño mínimo, facciones, criatura jugador, enemigo quieto y muerte/remoción de entidad. El jugador puede usar un ataque básico temporal con `Space` para dañar al enemigo si está cerca; después de suficientes golpes, el enemigo muere y desaparece.
 
+Se aplicó un cambio visual pre-Milestone 3: el renderer dibuja una estética roguelike mínima con tiles de pared como `#`, piso con puntos tenues, grilla translúcida y entidades como glyphs sobre canvas. Este cambio no modifica simulation, input, ECS, world, daño, movimiento ni colisión.
+
 Se aplicó un refactor arquitectónico post-Milestone 2: la simulación del frame ahora se orquesta desde `runSimulationStep(...)`, `src/app/main.js` ya no conoce el orden interno de los sistemas de simulation, y las reglas puras de daño/rango fueron extraídas a `src/domain/rules/`.
 
 Se aplicó un refactor mínimo pre-Milestone 2: la creación inicial del jugador fue extraída desde `src/app/main.js` hacia `src/game/createPlayer.js` para evitar que `main.js` acumule composición interna de entidades.
@@ -75,8 +77,11 @@ Ninguno.
 ## Render existente
 
 - Canvas renderer mínimo.
-- Dibuja tilemap.
+- Dibuja tilemap con estética roguelike mínima.
+- Dibuja paredes como `#`.
+- Dibuja piso con puntos tenues y grilla translúcida.
 - Dibuja entidades con `Position` + `Renderable`.
+- Soporta `Renderable` con `shape: "glyph"` y fallback rectangular.
 - Render no modifica estado de juego.
 
 ## ECS existente
@@ -91,8 +96,8 @@ Ninguno.
 
 ## Factories/setup existentes
 
-- `createPlayer`: crea la entidad jugador y compone sus componentes iniciales usando `addComponents(...)`.
-- `createEnemy`: crea un enemigo quieto con `Position`, `Renderable`, `Collider`, `Health`, `Creature` y `Faction`.
+- `createPlayer`: crea la entidad jugador y compone sus componentes iniciales usando `addComponents(...)`. Su representación visual actual es el glyph `@`.
+- `createEnemy`: crea un enemigo quieto con `Position`, `Renderable`, `Collider`, `Health`, `Creature` y `Faction`. Su representación visual actual es el glyph `e`.
 
 ## Archivos de aplicación existentes
 
@@ -133,6 +138,7 @@ Crear:
 - Confundir `basicAttackSystem` con combate final. Sigue siendo un sistema básico pre-Milestone 3.
 - Crear combate melee completo antes de diseñar economía de acciones y cooldowns.
 - Sobrecargar `runSimulationStep` con lógica que debería vivir en sistemas específicos.
+- Convertir `Renderable` en una bolsa de datos visuales demasiado amplia sin diseñar renderer/content.
 - Sobrecargar `src/game/createPlayer.js` o `src/game/createEnemy.js` con lógica que debería vivir en content/domain si las entidades crecen demasiado.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
@@ -141,6 +147,11 @@ Crear:
 
 ## Decisiones recientes
 
+- Se aplicó estética roguelike mínima sin tocar simulation/input/ECS/world/rules.
+- `Renderable` ahora puede representar glyphs visuales mediante `shape: "glyph"`, `glyph` y `fontSize`.
+- El jugador se dibuja como `@`.
+- El enemigo se dibuja como `e`.
+- El tilemap se dibuja con paredes `#`, puntos tenues de piso y grilla translúcida.
 - Se eliminó `testAttackSystem` para evitar código muerto/confuso antes de Milestone 3.
 - Se agregó `basicAttackSystem` como sistema básico de ataque pre-Milestone 3.
 - Se agregó `runSimulationStep(...)` para centralizar el orden de sistemas de simulation fuera de `src/app/main.js`.
