@@ -14,14 +14,14 @@ export function runSimulationStep({
   tilemap,
   deltaSeconds,
   movementIntent,
-  attackIntent,
+  commands = [],
 }) {
   playerControlSystem(world, movementIntent);
   aiSystem(world);
   movementSystem(world, tilemap, deltaSeconds);
   actionEconomySystem(world, deltaSeconds);
   meleeCombatSystem(world, [
-    ...createPlayerMeleeAttackRequests(world, attackIntent),
+    ...createPlayerMeleeAttackRequests(commands),
     ...createAiMeleeAttackRequests(world),
   ]);
   deathSystem(world);
