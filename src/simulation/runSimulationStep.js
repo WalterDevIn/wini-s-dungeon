@@ -9,8 +9,7 @@ export function runSimulationStep({
   tilemap,
   deltaSeconds,
   movementIntent,
-  basicAttackIntent,
-  attackIntent = basicAttackIntent,
+  attackIntent,
 }) {
   playerControlSystem(world, movementIntent);
   movementSystem(world, tilemap, deltaSeconds);
