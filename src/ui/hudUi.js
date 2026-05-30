@@ -1,5 +1,6 @@
 import { renderHudTemplate } from "./hudLayout.js";
 import {
+  updateCursorFeedback,
   updateKeyboardCaps,
   updateMouseCaps,
   updateTacticalStatus,
@@ -22,6 +23,7 @@ export function createHudUi(root) {
       snapshot.input.mouse,
     );
     updateTacticalStatus(elements.tacticalStatus, snapshot.tacticalMode);
+    updateCursorFeedback(elements.cursorFeedback, snapshot.input.mouse, snapshot.playerActionState);
     updateDebugPanel(elements, snapshot);
   }
 
@@ -34,6 +36,10 @@ function collectHudElements(root) {
   return {
     keyCaps: collectElementsByDataAttribute(root, "keyCode", "[data-key-code]"),
     mouseCaps: collectElementsByDataAttribute(root, "mouseCode", "[data-mouse-code]"),
+    cursorFeedback: {
+      root: root.querySelector("[data-cursor-feedback]"),
+      ring: root.querySelector("[data-cursor-ring]"),
+    },
     tacticalStatus: {
       root: root.querySelector("[data-tactical-status]"),
     },
