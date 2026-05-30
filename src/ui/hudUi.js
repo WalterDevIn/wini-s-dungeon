@@ -12,7 +12,7 @@ const KEYBOARD_CAPS = Object.freeze([
 const MOUSE_CAPS = Object.freeze([
   { code: "leftButtonPressed", label: "LMB" },
   { code: "rightButtonPressed", label: "RMB" },
-  { code: "middleButtonPressed", label: "MMB" },
+  { code: "wheelPulse", label: "Wheel" },
   { code: "button4Pressed", label: "M4" },
   { code: "button5Pressed", label: "M5" },
 ]);
@@ -20,6 +20,12 @@ const MOUSE_CAPS = Object.freeze([
 export function createHudUi(root) {
   root.classList.add("game-ui-root");
   root.innerHTML = `
+    <section class="wheel-feedback" data-wheel-feedback aria-label="Giro de rueda">
+      <span class="wheel-feedback-label">Wheel</span>
+      <span class="wheel-feedback-direction" data-wheel-direction>-</span>
+      <span class="wheel-feedback-index" data-wheel-index-small>0</span>
+    </section>
+
     <section class="input-hud" aria-label="Entradas presionadas">
       <div class="keyboard-hud" aria-label="Teclado">
         <div class="movement-key-block">
@@ -44,6 +50,8 @@ export function createHudUi(root) {
       <dl class="debug-grid">
         <dt>Click izquierdo</dt>
         <dd data-debug-left-button>No</dd>
+        <dt>Rodillo</dt>
+        <dd data-debug-wheel-index>0</dd>
         <dt>Último command</dt>
         <dd data-debug-last-command>none</dd>
         <dt>Acción jugador</dt>
@@ -68,7 +76,11 @@ export function createHudUi(root) {
       element,
     ]),
   );
+  const wheelFeedback = root.querySelector("[data-wheel-feedback]");
+  const wheelDirection = root.querySelector("[data-wheel-direction]");
+  const wheelIndexSmall = root.querySelector("[data-wheel-index-small]");
   const leftButton = root.querySelector("[data-debug-left-button]");
+  const wheelIndex = root.querySelector("[data-debug-wheel-index]");
   const lastCommand = root.querySelector("[data-debug-last-command]");
   const action = root.querySelector("[data-debug-action]");
   const phase = root.querySelector("[data-debug-phase]");
@@ -77,10 +89,12 @@ export function createHudUi(root) {
   function update(snapshot) {
     updateKeyboardCaps(keyCaps, snapshot.input.keyboard);
     updateMouseCaps(mouseCaps, snapshot.input.mouse);
+    updateWheelFeedback(wheelFeedback, wheelDirection, wheelIndexSmall, snapshot.input.mouse);
 
     const actionState = snapshot.playerActionState;
 
     leftButton.textContent = snapshot.input.mouse.leftButtonPressed ? "Sí" : "No";
+    wheelIndex.textContent = String(snapshot.input.mouse.wheelIndex);
     lastCommand.textContent = snapshot.lastCommand;
     action.textContent = actionState.currentAction ?? actionState.status;
     phase.textContent = actionState.phase ?? "-";
@@ -125,4 +139,22 @@ function updateMouseCaps(mouseCaps, mouseInput) {
   for (const [mouseCode, mouseCap] of mouseCaps) {
     mouseCap.classList.toggle("is-pressed", Boolean(mouseInput[mouseCode]));
   }
+}
+
+function updateWheelFeedback(wheelFeedback, wheelDirection, wheelIndexSmall, mouseInput) {
+  wheelFeedback.classList.toggle("is-active", mouseInput.wheelPulse);
+  wheelDirection.textContent = getWheelDirectionLabel(mouseInput.wheelDirection);
+  wheelIndexSmall.textContent = String(mouseInput.wheelIndex);
+}
+
+function getWheelDirectionLabel(direction) {
+  if (direction === "up") {
+    return "↑";
+  }
+
+  if (direction === "down") {
+    return "↓";
+  }
+
+  return "-";
 }
