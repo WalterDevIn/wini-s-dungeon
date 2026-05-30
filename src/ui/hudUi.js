@@ -3,6 +3,7 @@ import {
   updateCursorFeedback,
   updateKeyboardCaps,
   updateMouseCaps,
+  updateQuickBar,
   updateTacticalStatus,
   updateWheelFeedback,
 } from "./hudUpdate.js";
@@ -16,6 +17,7 @@ export function createHudUi(root) {
   function update(snapshot) {
     updateKeyboardCaps(elements.keyCaps, snapshot.input.keyboard);
     updateMouseCaps(elements.mouseCaps, snapshot.input.mouse);
+    updateQuickBar(elements.quickBarPairs, snapshot.input.mouse);
     updateWheelFeedback(
       elements.wheelFeedback,
       elements.wheelDirection,
@@ -36,6 +38,7 @@ function collectHudElements(root) {
   return {
     keyCaps: collectElementsByDataAttribute(root, "keyCode", "[data-key-code]"),
     mouseCaps: collectElementsByDataAttribute(root, "mouseCode", "[data-mouse-code]"),
+    quickBarPairs: [...root.querySelectorAll("[data-quick-bar-pair]")],
     cursorFeedback: {
       root: root.querySelector("[data-cursor-feedback]"),
       ring: root.querySelector("[data-cursor-ring]"),
