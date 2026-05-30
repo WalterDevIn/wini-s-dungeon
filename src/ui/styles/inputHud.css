@@ -1,0 +1,147 @@
+.keyboard-input-hud,
+.mouse-input-hud {
+  position: absolute;
+  bottom: 1.25rem;
+  padding: 0.45rem;
+  border: 2px solid rgba(244, 241, 232, 0.62);
+  background: rgba(0, 0, 0, 0.68);
+  box-shadow: 0 0 0 1px #000, 0 0 18px rgba(244, 241, 232, 0.08);
+}
+
+.keyboard-input-hud {
+  left: 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+}
+
+.mouse-input-hud {
+  right: 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+  justify-items: end;
+}
+
+.keyboard-key-row {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.keyboard-key-row-middle {
+  padding-left: 5.35rem;
+}
+
+.keyboard-key-row-bottom {
+  padding-left: 3.95rem;
+}
+
+.wheel-feedback {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 8rem;
+  padding: 0.45rem 0.65rem;
+  border: 2px solid rgba(244, 241, 232, 0.52);
+  background: rgba(0, 0, 0, 0.68);
+  color: #d7d0bd;
+  box-shadow: 0 0 0 1px #000, 0 0 18px rgba(244, 241, 232, 0.08);
+  opacity: 0.68;
+  transition:
+    border-color 100ms ease,
+    color 100ms ease,
+    opacity 100ms ease,
+    box-shadow 100ms ease;
+}
+
+.wheel-feedback.is-active {
+  border-color: #00ff66;
+  color: #f4f1e8;
+  opacity: 1;
+  box-shadow: 0 0 0 1px #000, 0 0 16px rgba(0, 255, 102, 0.24);
+}
+
+.wheel-feedback-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wheel-feedback-direction,
+.wheel-feedback-index {
+  min-width: 1.35rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.mouse-hud {
+  display: grid;
+  grid-template-columns: 2rem 3rem 3rem;
+  grid-template-rows: repeat(3, 2rem);
+  gap: 0.35rem;
+}
+
+.key-cap {
+  min-width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border: 2px solid #d7d0bd;
+  background: rgba(0, 0, 0, 0.86);
+  color: #f4f1e8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease,
+    color 100ms ease,
+    transform 100ms ease,
+    box-shadow 100ms ease;
+}
+
+.key-cap-tab {
+  min-width: 3.6rem;
+}
+
+.key-cap-space {
+  min-width: 5.4rem;
+}
+
+.mouse-cap-lmb {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.mouse-cap-rmb {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.mouse-cap-m5 {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.mouse-cap-wheel {
+  grid-column: 2 / 4;
+  grid-row: 2;
+  min-width: auto;
+}
+
+.mouse-cap-m4 {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.key-cap.is-pressed {
+  transform: translateY(1px);
+  border-color: #00ff66;
+  background: #00ff66;
+  color: #000;
+  box-shadow: 0 0 14px rgba(0, 255, 102, 0.32);
+}
