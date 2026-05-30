@@ -24,19 +24,19 @@ El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y
 
 La UI mínima muestra feedback de input dividido en dos hemisferios inferiores: teclado en esquina inferior izquierda y mouse/rueda en esquina inferior derecha. El mouse usa una grilla 3x3 con `LMB`, `RMB`, `M5`, `Wheel` y `M4`; `LMB` y `RMB` tienen tamaño visual amplio, mientras `M4` y `M5` quedan compactos. El indicador externo de rueda con número/dirección queda oculto temporalmente; el botón `Wheel` integrado en la grilla sigue visible y el debug panel sigue mostrando el índice de rueda. El teclado muestra `Tab`, `Q`, `W`, `F`, `A`, `R`, `S` y `Space`. La etiqueta superior `Pausa` solo aparece durante `tacticalPaused`. El debug panel sigue mostrando modo, acción preparada, índice de rueda, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
+La UI tiene una hotbar visual mínima de inventario rápido centrada abajo: 10 slots vacíos agrupados de a 2 en 5 pares. La selección actual es provisional y puramente visual: se deriva de `snapshot.input.mouse.wheelIndex` mediante pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`. No existe inventario real, items, uso de objetos ni selección por números todavía.
+
 El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy` y `AttackProfile`; esto no modifica daño, tiempos ni reglas de combate. El cursor custom se posiciona con `left/top` desde JS y mantiene el centrado con CSS.
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
 El input de mouse se registra sobre `window` desde `createGameApp` para que el cursor custom, feedback de botones, wheel y click izquierdo sigan respondiendo aunque el overlay/UI o el escalado visual del canvas interfieran con eventos directos sobre el canvas.
 
-Se corrigió un bug de scope en `mouseInput`: `updatePointerPosition` ahora vive dentro de `createMouseInput`, por lo que puede acceder a `pointerX`, `pointerY` y `hasPointerPosition` sin producir `ReferenceError`.
+Se aplicó un refactor de input post-Milestone 5.1: `keyboardInput` quedó como factory pública, `keyboardKeyState` contiene tracking físico/visual y toggle táctico, y `keyboardSnapshot` construye el snapshot visual del teclado. También `mouseInput` quedó como factory pública, mientras `mouseButtonState`, `mouseWheelState` y `mousePointerState` separan botones, rueda y puntero.
 
-Se aplicó un refactor de input post-Milestone 5.1: `keyboardInput` quedó como factory pública, `keyboardKeyState` contiene tracking físico/visual y toggle táctico, y `keyboardSnapshot` construye el snapshot visual del teclado.
+Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador DOM, `hudLayout` contiene template/configuración del HUD, y `hudUpdate` contiene helpers de actualización visual, incluyendo cursor custom, anillo radial de acción y hotbar visual mínima.
 
-Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador DOM, `hudLayout` contiene template/configuración del HUD, y `hudUpdate` contiene helpers de actualización visual, incluyendo cursor custom y anillo radial de acción.
-
-Todavía no hay conjuros, menú táctico con botones de acción, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
+Todavía no hay conjuros, menú táctico con botones de acción, inventario real, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
 
@@ -85,19 +85,19 @@ Ninguno.
 - `keyboardInput`: factory pública que expone `getMovementIntent`, `consumeTacticalToggleIntent` y `getSnapshot`.
 - `keyboardKeyState`: tracking de teclas físicas, teclas visuales y toggle táctico de `Space`.
 - `keyboardSnapshot`: construcción del snapshot visual de teclado para HUD.
-- Input de teclado expone snapshot visual por letra de movimiento (`W`, `A`, `R`, `S`) y snapshot visual de `Q`, `F`, `Tab` y `Space`.
-- Input de teclado expone `consumeTacticalToggleIntent()` para alternar pausa táctica con `Space` en keydown inicial.
 - Input de mouse para acción primaria con click izquierdo, registrado sobre `window` desde app.
-- Input de mouse expone snapshot visual de `LMB`, `RMB`, `M4`, `M5`, dirección/pulso de rueda, índice circular de rueda `0..9` y posición actual del puntero.
-- Input produce movement intent y primary click intent.
+- `mouseInput`: factory pública que expone `consumePrimaryClickIntent` y `getSnapshot`.
+- `mouseButtonState`: tracking de botones y click primario consumible.
+- `mouseWheelState`: tracking de rueda, índice circular `0..9`, dirección y pulso.
+- `mousePointerState`: tracking de posición del puntero.
 - Input no modifica ECS ni componentes.
 - Input no aplica daño.
 
 ## UI existente
 
 - `hudUi`: orquesta nodos DOM del HUD y delega layout/update en módulos específicos.
-- `hudLayout`: contiene template/configuración del HUD de teclado, mouse, rueda, pausa, cursor custom y debug panel.
-- `hudUpdate`: contiene helpers para actualizar key caps, mouse caps, feedback de rueda, estado táctico, cursor custom y anillo radial de acción.
+- `hudLayout`: contiene template/configuración del HUD de teclado, mouse, rueda, pausa, cursor custom, hotbar visual y debug panel.
+- `hudUpdate`: contiene helpers para actualizar key caps, mouse caps, feedback de rueda, estado táctico, cursor custom, anillo radial de acción y hotbar visual.
 - `buildUiSnapshot`: construye un snapshot simple para UI con input, estado táctico, último command, estado de acción del jugador, duración de fase y progreso de fase.
 - La UI no modifica ECS ni llama sistemas de simulation.
 
@@ -129,6 +129,9 @@ Ninguno.
 - `src/input/keyboardKeyState.js`
 - `src/input/keyboardSnapshot.js`
 - `src/input/mouseInput.js`
+- `src/input/mouseButtonState.js`
+- `src/input/mouseWheelState.js`
+- `src/input/mousePointerState.js`
 - `src/world/tilemap.js`
 - `src/simulation/runSimulationStep.js`
 - `src/simulation/playerControlSystem.js`
@@ -150,7 +153,7 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone 5.2 o refactor previo: decidir si conviene agregar panel táctico real, cancelar acción preparada, o dividir `style.css` antes de seguir ampliando UI.
+Milestone 5.2: decidir si se agrega selección real de hotbar por números `1-5` con estado app-level, o si primero se implementa modo visual de conjuros/rasgos sin lógica real.
 
 ## Riesgos actuales
 
@@ -162,17 +165,22 @@ Milestone 5.2 o refactor previo: decidir si conviene agregar panel táctico real
 - No existe command buffer; solo hay command mínimo directo por frame y un command táctico pendiente máximo en app/session.
 - No existe event bus ni events.
 - `createGameApp` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación.
-- `style.css` supera 100 líneas y concentra estilos base, canvas, HUD, cursor, wheel feedback, key caps, estado táctico y debug panel; conviene dividirlo en un scope futuro cuando exista estrategia clara de CSS.
-- `mouseInput.js` está cerca de 100 líneas y acumula click primario, botones extra, rueda y posición de puntero; aún aceptable, pero conviene vigilarlo si el mouse empieza a producir acciones reales.
+- `style.css` supera 100 líneas y concentra estilos base, canvas, HUD, cursor, hotbar, wheel feedback, key caps, estado táctico y debug panel; conviene dividirlo en un scope futuro cuando exista estrategia clara de CSS.
+- La hotbar visual deriva selección desde `wheelIndex`; es una solución provisional de UI, no una fuente de verdad de inventario.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
 - Pedir a la IA implementaciones grandes sin scope.
 
 ## Decisiones recientes
 
-- Se corrigió el bug `ReferenceError: pointerX is not defined` moviendo `updatePointerPosition` dentro de `createMouseInput`.
-- `createGameApp` ahora registra `createMouseInput(window)` para robustecer cursor custom, feedback de mouse, rueda y clicks.
-- Se corrigió el cursor custom para posicionarse con `left/top` desde JS y centrarse con `transform: translate(-50%, -50%)` desde CSS.
+- Se agregó hotbar visual mínima de inventario rápido: 10 slots vacíos agrupados de a 2 en 5 pares.
+- La selección de hotbar es provisional y visual: se deriva de `mouse.wheelIndex` sin crear inventario real ni controller app-level.
+- No se implementó selección por números `1-5`; queda para un scope posterior.
+- `mouseInput.js` fue dividido para separar botones, rueda y puntero, manteniendo la misma API pública y el mismo snapshot.
+- `mouseButtonState.js` contiene tracking de botones y click primario consumible.
+- `mouseWheelState.js` contiene rueda, dirección, pulso e índice circular `0..9`.
+- `mousePointerState.js` contiene posición del puntero.
+- `createGameApp` registra `createMouseInput(window)` para robustecer cursor custom, feedback de mouse, rueda y clicks.
 - Se agregó cursor custom tipo `+` como overlay DOM y se ocultó el cursor nativo sobre el juego.
 - Se agregó anillo radial alrededor del cursor para representar `windup` y `recovery` del jugador controlado.
 - El progreso radial se calcula desde `ActionEconomy.timeRemaining` y duración de fase derivada de `AttackProfile`/`pendingAttack`, sin timers propios en UI.
@@ -182,16 +190,13 @@ Milestone 5.2 o refactor previo: decidir si conviene agregar panel táctico real
 - El indicador externo de `Wheel` con número/dirección quedó oculto temporalmente por CSS para no romper la silueta del mouse HUD.
 - `LMB` y `RMB` recuperaron tamaño visual amplio mediante columnas más anchas en la grilla del mouse.
 - Se reorganizó visualmente el HUD: teclado abajo izquierda; mouse y rueda abajo derecha.
-- La banda superior ahora muestra solo `Pausa` y solo durante `tacticalPaused`.
+- La banda superior muestra solo `Pausa` y solo durante `tacticalPaused`.
 - El layout del mouse usa grilla 3x3: `LMB` fila 1 columna 2, `RMB` fila 1 columna 3, `M5` fila 2 columna 1, `Wheel` fila 2 columnas 2-3, `M4` fila 3 columna 1.
 - Milestone 5.1 implementó pausa táctica mínima con `Space`.
 - La pausa táctica vive en app/session mediante `tacticalModeController`, no en ECS ni simulation.
 - Mientras está en `tacticalPaused`, `createGameApp` no llama `runSimulationStep`.
 - `LMB` en running conserva ataque inmediato; `LMB` en `tacticalPaused` prepara un `AttackCommand` pendiente.
 - Al salir de pausa, se libera como máximo un command pendiente hacia simulation.
-- Se dividió `hudUi` en `hudLayout` y `hudUpdate` para reducir complejidad y preparar UI futura.
-- `hudUi` queda como orquestador DOM: inyecta template, cachea nodos y delega actualización.
-- El rodillo mantiene un índice circular `0..9`: `deltaY < 0` incrementa y `deltaY > 0` decrementa, con wrap entre `0` y `9`.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
