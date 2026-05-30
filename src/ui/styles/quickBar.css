@@ -1,3 +1,30 @@
+.player-health-bar {
+  position: absolute;
+  left: calc(50% - 12rem);
+  bottom: 4.15rem;
+  display: flex;
+  gap: 0.16rem;
+  padding: 0.18rem 0.22rem;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(215, 208, 189, 0.4);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.65);
+}
+
+.player-health-pip {
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 1px solid rgba(215, 208, 189, 0.78);
+  background: rgba(0, 0, 0, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.75);
+}
+
+.player-health-pip.is-filled {
+  background: #b83232;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 235, 210, 0.18),
+    0 0 6px rgba(184, 50, 50, 0.35);
+}
+
 .quick-bar {
   --quick-bar-slot-size: 2rem;
   --quick-bar-slot-gap: 0.18rem;
