@@ -12,22 +12,22 @@ const demoEncounterSpawns = Object.freeze([
   {
     creatureId: "bat",
     position: {
-      x: 384,
-      y: 384,
+      x: 576,
+      y: 480,
     },
   },
   {
     creatureId: "goblinSkirmisher",
     position: {
-      x: 672,
-      y: 384,
+      x: 1632,
+      y: 480,
     },
   },
   {
     creatureId: "stoneCrawler",
     position: {
-      x: 912,
-      y: 528,
+      x: 384,
+      y: 1104,
     },
   },
 ]);
