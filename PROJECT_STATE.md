@@ -16,6 +16,8 @@ Se aplicó el refactor preventivo `refactor/creature-factory-foundation`: existe
 
 Se aplicó el refactor preventivo `refactor/creature-content-definitions`: las definiciones concretas de criaturas viven ahora en `src/content/creatures`. `humanAdventurer` define la criatura inicial controlada por el jugador y `goblinSkirmisher` define la criatura enemiga inicial controlada por IA. `createPlayer(world)` y `createEnemy(world)` quedan como wrappers temporales de demo que obtienen definiciones desde `creatureRegistry` y llaman a `createCreature`. `Creature.kind` dejó de representar `player`/`enemy` y ahora expresa identidad de criatura mínima: `human` y `goblin`. No se agregaron componentes, sistemas, commands, events ni inventario.
 
+Se agregó `content/basic-creature-roster-rat-bat-stonecrawler`: existen definiciones de content para `rat`, `bat` y `stoneCrawler`, registradas en `creatureRegistry`, pero todavía no se usan en spawns. El enemigo inicial sigue siendo `goblinSkirmisher` y no cambió el gameplay observable.
+
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
@@ -97,6 +99,9 @@ Ninguno.
 - `src/content/spells/spellRegistry.js`: registry mínimo para obtener definiciones de spell por id.
 - `src/content/creatures/humanAdventurer.js`: definición data-driven mínima de la criatura inicial del jugador.
 - `src/content/creatures/goblinSkirmisher.js`: definición data-driven mínima de la criatura enemiga inicial.
+- `src/content/creatures/rat.js`: definición data-driven mínima de rat, disponible pero no usada por spawns.
+- `src/content/creatures/bat.js`: definición data-driven mínima de bat, disponible pero no usada por spawns.
+- `src/content/creatures/stoneCrawler.js`: definición data-driven mínima de stoneCrawler, disponible pero no usada por spawns.
 - `src/content/creatures/creatureRegistry.js`: registry mínimo para obtener definiciones de criatura por id.
 
 ## Factories existentes
@@ -156,6 +161,9 @@ Ninguno.
 - `src/content/spells/spellRegistry.js`
 - `src/content/creatures/humanAdventurer.js`
 - `src/content/creatures/goblinSkirmisher.js`
+- `src/content/creatures/rat.js`
+- `src/content/creatures/bat.js`
+- `src/content/creatures/stoneCrawler.js`
 - `src/content/creatures/creatureRegistry.js`
 - `src/game/createPlayer.js`
 - `src/game/createEnemy.js`
@@ -205,6 +213,7 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 - Firebolt por `RMB` usa `ActionEconomy`, pero no tiene spell slots, recursos ni cooldown visual.
 - `spellCastSystem` todavía concentra varias responsabilidades: actualización de target, validación de spell, resolución de fase y resolución de efecto. No partir todavía salvo que aparezca un segundo spell o segundo effect type, o que el archivo siga creciendo.
 - `createCreature` todavía recibe definiciones con estructura mínima; no existe sistema de species/archetype/progression y no debe agregarse sin scope.
+- `rat`, `bat` y `stoneCrawler` existen en content, pero no hay spawn list ni encounter system para usarlos todavía.
 - Inventory todavía no existe; cuando se agregue, debe ser trait ECS reutilizable para criaturas/contenedores.
 - La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
@@ -221,32 +230,16 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
-- Se agregó `src/content/creatures/humanAdventurer.js`.
-- Se agregó `src/content/creatures/goblinSkirmisher.js`.
-- Se agregó `src/content/creatures/creatureRegistry.js`.
-- `createPlayer(world)` conserva su API pública y obtiene `humanAdventurer` desde content.
-- `createEnemy(world)` conserva su API pública y obtiene `goblinSkirmisher` desde content.
-- `Creature.kind` ya no usa `player`/`enemy`; usa `human`/`goblin` porque la búsqueda no encontró reglas dependiendo de esos valores.
+- Se agregó `src/content/creatures/rat.js`.
+- Se agregó `src/content/creatures/bat.js`.
+- Se agregó `src/content/creatures/stoneCrawler.js`.
+- `creatureRegistry` registra `rat`, `bat` y `stoneCrawler`.
+- Estas criaturas nuevas son content disponible, pero todavía no se usan por spawns.
+- No se modificaron `createPlayer`, `createEnemy` ni `createCreature` en este scope.
+- No se agregaron componentes, sistemas, commands, events, loot, drops, inventario, IA especial, vuelo real, veneno, knockback ni habilidades.
 - Content define qué criatura existe; `createCreature` materializa ECS.
 - `creatureRegistry` solo devuelve definiciones; no crea entidades.
-- No se modificó `createCreature`.
-- No se agregó `Inventory` en este scope.
-- No se modificó `createGameApp`.
-- No se agregaron componentes, sistemas, commands ni events.
-- Se agregó `src/domain/factories/createCreature.js`.
-- `createCreature(world, definition)` centraliza la construcción común de criaturas ECS.
-- `createCreature` agrega componentes comunes de criatura y controles opcionales `PlayerControlled` o `AIControlled` según definición.
-- Player queda modelado como `Creature + PlayerControlled`.
-- Enemy queda modelado como `Creature + AIControlled`.
-- Se agregó `src/domain/rules/actionEconomyRules.js`.
-- `canStartAction(actionEconomy)` centraliza la validación mínima para iniciar una acción.
-- `startAction(actionEconomy, { currentAction, phase, duration, pendingAttack?, pendingSpell? })` centraliza inicio de fase, timer, duración normalizada y pending payload.
-- `transitionActionPhase(actionEconomy, { phase, duration })` centraliza cambios de fase con `timeRemaining` y `phaseDuration`.
-- `clearAction(actionEconomy)` centraliza limpieza de `currentAction`, `phase`, `timeRemaining`, `phaseDuration`, `pendingAttack` y `pendingSpell`.
-- Firebolt puede reapuntar durante windup usando `aimIntent`.
-- Simulation no lee mouse físico, DOM ni UI para reapuntar.
-- Firebolt crea el proyectil al terminar el windup, no al presionar `RMB`.
-- Durante windup/recovery de Firebolt, melee y nuevos casteos quedan bloqueados por `ActionEconomy.currentAction`.
+- `Creature.kind` ya no usa `player`/`enemy`; usa identidades de criatura como `human`, `goblin`, `rat`, `bat` y `stoneCrawler`.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
