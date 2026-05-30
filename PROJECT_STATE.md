@@ -8,9 +8,11 @@ Debe actualizarse al terminar cada milestone, feature importante o refactor arqu
 
 Milestone 5.1 completado: modo táctico pausado mínimo con `Space`, preparación de golpe con `LMB` durante pausa y ejecución del `AttackCommand` preparado al despausar.
 
-Milestone 6 está iniciado: ya existe foundation mínima de proyectiles genéricos ECS y Firebolt mínimo mediante `CastCommand` con botón derecho del mouse. Firebolt usa `ActionEconomy`: tiene windup de 1.5 segundos, recovery global de 3 segundos, bloquea melee y nuevos casteos durante windup/recovery, permite reapuntar durante windup mediante `aimIntent`, y genera el proyectil solo al finalizar el windup hacia el último target válido. `ActionEconomy.phaseDuration` normaliza el feedback de progreso para cualquier acción activa. Todavía no hay spell slots, recursos, cooldown visual, prepared spells, hotbar conectada a casteo ni menú táctico de conjuros.
+Milestone 6 está iniciado y funcional: ya existe foundation mínima de proyectiles genéricos ECS y Firebolt mínimo mediante `CastCommand` con botón derecho del mouse. Firebolt usa `ActionEconomy`: tiene windup de 1.5 segundos, recovery global de 3 segundos, bloquea melee y nuevos casteos durante windup/recovery, permite reapuntar durante windup mediante `aimIntent`, y genera el proyectil solo al finalizar el windup hacia el último target válido. `ActionEconomy.phaseDuration` normaliza el feedback de progreso para cualquier acción activa. Todavía no hay spell slots, recursos, cooldown visual, prepared spells, hotbar conectada a casteo ni menú táctico de conjuros.
 
-Se aplicó el refactor preventivo `refactor/action-economy-rules`: el protocolo común de acciones con fases vive ahora en `src/domain/rules/actionEconomyRules.js`. `meleeCombatSystem` y `spellCastSystem` siguen resolviendo sus reglas específicas, pero ya no setean manualmente en varios lugares `currentAction`, `phase`, `timeRemaining`, `phaseDuration` ni la limpieza de `pendingAttack`/`pendingSpell`.
+Se aplicó el refactor preventivo `refactor/action-economy-rules`: el protocolo común de acciones con fases vive en `src/domain/rules/actionEconomyRules.js`. `meleeCombatSystem` y `spellCastSystem` siguen resolviendo sus reglas específicas, pero ya no setean manualmente en varios lugares `currentAction`, `phase`, `timeRemaining`, `phaseDuration` ni la limpieza de `pendingAttack`/`pendingSpell`.
+
+Se aplicó el refactor preventivo `refactor/creature-factory-foundation`: existe `src/domain/factories/createCreature.js` como factory base para criaturas ECS. `src/game/createPlayer.js` y `src/game/createEnemy.js` conservan sus APIs públicas, pero ahora delegan la construcción común en `createCreature`. El jugador queda modelado como `Creature + PlayerControlled`; el enemigo como `Creature + AIControlled`. No se agregaron componentes, sistemas, commands, events ni inventario.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -96,6 +98,12 @@ Ninguno.
 - `src/content/spells/firebolt.js`: definición mínima data-driven de Firebolt como conjuro con targeting, cast y effect.
 - `src/content/spells/spellRegistry.js`: registry mínimo para obtener definiciones de spell por id.
 
+## Factories existentes
+
+- `src/domain/factories/createCreature.js`: factory mínima para crear criaturas ECS con componentes comunes y controles opcionales `PlayerControlled` o `AIControlled`.
+- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)` y delega en `createCreature`.
+- `src/game/createEnemy.js`: wrapper de demo que conserva `createEnemy(world)` y delega en `createCreature`.
+
 ## Reglas puras existentes
 
 - `damageRules`: contiene cálculo de daño mitigado y aplicación de daño a `Health`.
@@ -155,6 +163,7 @@ Ninguno.
 - `src/ecs/world.js`
 - `src/domain/components.js`
 - `src/domain/commands.js`
+- `src/domain/factories/createCreature.js`
 - `src/domain/rules/damageRules.js`
 - `src/domain/rules/attackRules.js`
 - `src/domain/rules/geometryRules.js`
@@ -207,7 +216,7 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone 6 siguiente scope: decidir si Firebolt debe conectarse a hotbar visual, si conviene exponer feedback específico de spell cast, o si conviene empezar selección de conjuros. Hacerlo en scopes separados.
+Milestone Pre-7 siguiente scope recomendado: `feature/inventory-trait-foundation`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador.
 
 Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reutilizar `actionEconomyRules` en lugar de duplicar protocolo de `ActionEconomy` dentro de cada sistema.
 
@@ -215,6 +224,8 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 - Firebolt por `RMB` usa `ActionEconomy`, pero no tiene spell slots, recursos ni cooldown visual.
 - `spellCastSystem` todavía concentra varias responsabilidades: actualización de target, validación de spell, resolución de fase y resolución de efecto. No partir todavía salvo que aparezca un segundo spell o segundo effect type, o que el archivo siga creciendo.
+- `createCreature` todavía recibe definiciones inline desde wrappers de demo; no existe registry data-driven de criaturas y no debe agregarse sin scope.
+- Inventory todavía no existe; cuando se agregue, debe ser trait ECS reutilizable para criaturas/contenedores.
 - La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
@@ -232,6 +243,16 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
+- Se agregó `src/domain/factories/createCreature.js`.
+- `createCreature(world, definition)` centraliza la construcción común de criaturas ECS.
+- `createCreature` agrega componentes comunes de criatura y controles opcionales `PlayerControlled` o `AIControlled` según definición.
+- `createPlayer(world)` conserva su API pública y delega en `createCreature`.
+- `createEnemy(world)` conserva su API pública y delega en `createCreature`.
+- Player queda modelado como `Creature + PlayerControlled`.
+- Enemy queda modelado como `Creature + AIControlled`.
+- No se agregó `Inventory` en este scope.
+- No se modificó `createGameApp`.
+- No se agregaron componentes, sistemas, commands ni events.
 - Se agregó `src/domain/rules/actionEconomyRules.js`.
 - `canStartAction(actionEconomy)` centraliza la validación mínima para iniciar una acción.
 - `startAction(actionEconomy, { currentAction, phase, duration, pendingAttack?, pendingSpell? })` centraliza inicio de fase, timer, duración normalizada y pending payload.
