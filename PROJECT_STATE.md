@@ -24,6 +24,8 @@ La UI mínima muestra un HUD compacto extendido en la esquina inferior derecha c
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`.
 
+Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador DOM, `hudLayout` contiene template/configuración del HUD, y `hudUpdate` contiene helpers de actualización visual.
+
 Se aplicó un refactor menor post-Milestone 4 para reducir complejidad de archivos de runtime largos: `aiSystem` delega targeting en `aiTargeting`, `meleeCombatSystem` ya no construye requests de jugador/IA, y la geometría compartida vive en `geometryRules`.
 
 Se aplicó Milestone 3.5: `ActionEconomy` dejó de ser solo un cooldown numérico y ahora representa acción actual, fase, tiempo restante y ataque pendiente. `AttackProfile` separa `windupSeconds` y `recoverySeconds`. `meleeCombatSystem` no aplica daño instantáneo al recibir input; inicia la acción, resuelve el impacto después del `windup` y libera al actor después del `recovery`.
@@ -100,7 +102,9 @@ Ninguno.
 
 ## UI existente
 
-- `hudUi`: muestra HUD compacto extendido de teclado/mouse, indicador inferior izquierdo de giro de rueda y una ventana mínima de feedback.
+- `hudUi`: orquesta nodos DOM del HUD y delega layout/update en módulos específicos.
+- `hudLayout`: contiene template/configuración del HUD compacto de teclado/mouse, indicador de rueda y debug panel.
+- `hudUpdate`: contiene helpers para actualizar key caps, mouse caps y feedback de rueda.
 - `buildUiSnapshot`: construye un snapshot simple para UI con input, último command y estado de acción del jugador.
 - La UI no modifica ECS ni llama sistemas de simulation.
 
@@ -179,6 +183,8 @@ Ninguno.
 - `src/simulation/meleeCombatSystem.js`
 - `src/simulation/deathSystem.js`
 - `src/ui/hudUi.js`
+- `src/ui/hudLayout.js`
+- `src/ui/hudUpdate.js`
 - `src/render/canvasRenderer.js`
 - `src/render/drawMap.js`
 - `src/render/drawEntities.js`
@@ -206,6 +212,7 @@ Crear:
 - No existe command buffer; solo hay command mínimo directo por frame.
 - No existe event bus ni events.
 - Convertir `createGameApp` en otro archivo gigante si Milestone 5.1 no separa bien modo táctico y command mapping.
+- `style.css` supera 100 líneas y concentra estilos base, canvas, HUD, wheel feedback, key caps y debug panel; conviene dividirlo en un scope futuro cuando exista estrategia clara de CSS.
 - Sobrecargar `runSimulationStep` con lógica que debería vivir en sistemas específicos.
 - Convertir `Renderable` en una bolsa de datos visuales demasiado amplia sin diseñar renderer/content.
 - Sobrecargar `movementCollision` si se intenta resolver ahí colisiones generales de proyectiles/criaturas/puertas antes de diseñar `collisionSystem`.
@@ -216,6 +223,8 @@ Crear:
 
 ## Decisiones recientes
 
+- Se dividió `hudUi` en `hudLayout` y `hudUpdate` para reducir complejidad y preparar UI futura.
+- `hudUi` queda como orquestador DOM: inyecta template, cachea nodos y delega actualización.
 - Se corrigió el HUD de `R`/`S` para usar letras visuales normalizadas en lugar de posiciones físicas.
 - El botón medio dejó de representar el rodillo en el HUD; el rodillo ahora usa eventos `wheel` reales.
 - El rodillo mantiene un índice circular `0..9`: `deltaY < 0` incrementa y `deltaY > 0` decrementa, con wrap entre `0` y `9`.
