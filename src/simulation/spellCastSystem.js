@@ -34,6 +34,7 @@ function resolveSpellActions(world) {
       resolveSpellEffect(world, casterId, actionEconomy);
       actionEconomy.phase = RECOVERY_PHASE;
       actionEconomy.timeRemaining = actionEconomy.pendingSpell.recoverySeconds;
+      actionEconomy.phaseDuration = actionEconomy.pendingSpell.recoverySeconds;
       return;
     }
 
@@ -68,6 +69,7 @@ function startRequestedSpellCasts(world, commands) {
     actionEconomy.currentAction = SPELL_CAST_ACTION;
     actionEconomy.phase = WINDUP_PHASE;
     actionEconomy.timeRemaining = spellDefinition.cast.windupSeconds;
+    actionEconomy.phaseDuration = spellDefinition.cast.windupSeconds;
     actionEconomy.pendingSpell = {
       spellDefinition,
       targetPoint: command.targetPoint,
@@ -103,5 +105,6 @@ function clearCurrentSpellAction(actionEconomy) {
   actionEconomy.currentAction = null;
   actionEconomy.phase = null;
   actionEconomy.timeRemaining = 0;
+  actionEconomy.phaseDuration = 0;
   actionEconomy.pendingSpell = null;
 }
