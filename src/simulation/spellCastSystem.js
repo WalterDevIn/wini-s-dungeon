@@ -1,6 +1,12 @@
 import { getComponent, queryEntities } from "../ecs/world.js";
 import { CommandType } from "../domain/commands.js";
 import { ComponentType } from "../domain/components.js";
+import {
+  canStartAction,
+  clearAction,
+  startAction,
+  transitionActionPhase,
+} from "../domain/rules/actionEconomyRules.js";
 import { getSpellDefinition } from "../content/spells/spellRegistry.js";
 import { createSpellProjectile } from "./helpers/spellProjectileFactory.js";
 
@@ -59,14 +65,15 @@ function resolveSpellActions(world) {
 
     if (actionEconomy.phase === WINDUP_PHASE) {
       resolveSpellEffect(world, casterId, actionEconomy);
-      actionEconomy.phase = RECOVERY_PHASE;
-      actionEconomy.timeRemaining = actionEconomy.pendingSpell.recoverySeconds;
-      actionEconomy.phaseDuration = actionEconomy.pendingSpell.recoverySeconds;
+      transitionActionPhase(actionEconomy, {
+        phase: RECOVERY_PHASE,
+        duration: actionEconomy.pendingSpell.recoverySeconds,
+      });
       return;
     }
 
     if (actionEconomy.phase === RECOVERY_PHASE) {
-      clearCurrentSpellAction(actionEconomy);
+      clearAction(actionEconomy);
     }
   }
 }
@@ -83,7 +90,7 @@ function startRequestedSpellCasts(world, commands) {
 
     const actionEconomy = getComponent(world, command.actorId, ComponentType.ActionEconomy);
 
-    if (!actionEconomy || actionEconomy.currentAction) {
+    if (!canStartAction(actionEconomy)) {
       continue;
     }
 
@@ -93,19 +100,20 @@ function startRequestedSpellCasts(world, commands) {
       continue;
     }
 
-    actionEconomy.currentAction = SPELL_CAST_ACTION;
-    actionEconomy.phase = WINDUP_PHASE;
-    actionEconomy.timeRemaining = spellDefinition.cast.windupSeconds;
-    actionEconomy.phaseDuration = spellDefinition.cast.windupSeconds;
-    actionEconomy.pendingSpell = {
-      spellDefinition,
-      targetPoint: {
-        x: command.initialTargetPoint.x,
-        y: command.initialTargetPoint.y,
-        hasPosition: true,
+    startAction(actionEconomy, {
+      currentAction: SPELL_CAST_ACTION,
+      phase: WINDUP_PHASE,
+      duration: spellDefinition.cast.windupSeconds,
+      pendingSpell: {
+        spellDefinition,
+        targetPoint: {
+          x: command.initialTargetPoint.x,
+          y: command.initialTargetPoint.y,
+          hasPosition: true,
+        },
+        recoverySeconds: spellDefinition.cast.recoverySeconds,
       },
-      recoverySeconds: spellDefinition.cast.recoverySeconds,
-    };
+    });
   }
 }
 
@@ -130,12 +138,4 @@ function isSupportedSpell(spellDefinition) {
     Number.isFinite(spellDefinition.cast?.windupSeconds) &&
     Number.isFinite(spellDefinition.cast?.recoverySeconds)
   );
-}
-
-function clearCurrentSpellAction(actionEconomy) {
-  actionEconomy.currentAction = null;
-  actionEconomy.phase = null;
-  actionEconomy.timeRemaining = 0;
-  actionEconomy.phaseDuration = 0;
-  actionEconomy.pendingSpell = null;
 }
