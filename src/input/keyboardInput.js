@@ -9,11 +9,21 @@ const MOVEMENT_KEYS = Object.freeze({
   KeyD: { x: 1, y: 0 },
 });
 
+const VISUAL_KEYS = Object.freeze([
+  "KeyW",
+  "KeyA",
+  "KeyS",
+  "KeyD",
+  "KeyQ",
+  "KeyF",
+  "Space",
+]);
+
 export function createKeyboardInput(target = window) {
   const pressedKeys = new Set();
 
   function handleKeyDown(event) {
-    if (!MOVEMENT_KEYS[event.code]) {
+    if (!isTrackedKey(event.code)) {
       return;
     }
 
@@ -22,7 +32,7 @@ export function createKeyboardInput(target = window) {
   }
 
   function handleKeyUp(event) {
-    if (!MOVEMENT_KEYS[event.code]) {
+    if (!isTrackedKey(event.code)) {
       return;
     }
 
@@ -60,7 +70,20 @@ export function createKeyboardInput(target = window) {
     };
   }
 
+  function getSnapshot() {
+    return {
+      pressedKeys: Object.fromEntries(
+        VISUAL_KEYS.map((keyCode) => [keyCode, pressedKeys.has(keyCode)]),
+      ),
+    };
+  }
+
   return {
     getMovementIntent,
+    getSnapshot,
   };
+}
+
+function isTrackedKey(keyCode) {
+  return Boolean(MOVEMENT_KEYS[keyCode]) || VISUAL_KEYS.includes(keyCode);
 }
