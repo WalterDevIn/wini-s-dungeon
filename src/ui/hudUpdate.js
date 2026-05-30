@@ -35,6 +35,15 @@ export function updateWheelFeedback(
   wheelIndexSmall.textContent = String(mouseInput.wheelIndex);
 }
 
+export function updateTacticalStatus(tacticalStatus, tacticalMode) {
+  tacticalStatus.root.classList.toggle(
+    "is-paused",
+    tacticalMode.mode === "tacticalPaused",
+  );
+  tacticalStatus.mode.textContent = tacticalMode.mode;
+  tacticalStatus.pendingAction.textContent = tacticalMode.pendingAction;
+}
+
 function getWheelDirectionLabel(direction) {
   if (direction === "up") {
     return "↑";
