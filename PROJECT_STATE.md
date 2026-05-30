@@ -8,7 +8,7 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 Milestone 5.1 completado: modo táctico pausado mínimo con `Space`, preparación de golpe con `LMB` durante pausa y ejecución del `AttackCommand` preparado al despausar.
 
-Milestone 6 está iniciado: ya existe foundation mínima de proyectiles genéricos ECS y Firebolt mínimo mediante `CastCommand` con botón derecho del mouse. Todavía no hay spell slots, recursos, cooldowns, prepared spells, hotbar conectada a casteo ni menú táctico de conjuros.
+Milestone 6 está iniciado: ya existe foundation mínima de proyectiles genéricos ECS y Firebolt mínimo mediante `CastCommand` con botón derecho del mouse. Firebolt ahora usa `ActionEconomy`: tiene windup de 1.5 segundos, recovery global de 3 segundos, bloquea melee y nuevos casteos durante windup/recovery, y genera el proyectil solo al finalizar el windup. Todavía no hay spell slots, recursos, cooldown visual, prepared spells, hotbar conectada a casteo ni menú táctico de conjuros.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -22,13 +22,17 @@ La pausa táctica vive en app/session, no en ECS ni simulation. Mientras el modo
 
 El juego tiene vida, daño, facciones, criatura jugador, enemigo, muerte/remoción de entidad y combate melee mínimo con fases. El ataque entra en `windup`, luego resuelve impacto contra el estado actual del mundo, y después entra en `recovery`.
 
-Regla actual de ataque melee: un ataque confirmado consume la acción aunque no impacte. El daño solo se aplica si, al terminar el `windup`, existe un objetivo enemigo válido dentro del alcance.
+Regla actual de ataque melee: un ataque confirmado consume la acción aunque no impacte. El daño solo se aplica si, al terminar el `windup`, existe un objetivo enemigo válido dentro del alcance. Como melee ya ignora nuevos ataques si `ActionEconomy.currentAction` existe, Firebolt bloquea melee durante su windup y recovery global sin tocar `meleeCombatSystem`.
 
 El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y distancia, lo persigue en línea recta y ataca al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
 
 Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`. `projectileMovementSystem` mueve proyectiles y los destruye contra tiles sólidos. `projectileImpactSystem` detecta impacto contra criaturas enemigas, filtra por facción y `DefenseProfile.canBeHit`, aplica daño mitigado con `damageRules` y remueve el proyectil si corresponde. `lifetimeSystem` remueve cualquier entidad con `Lifetime` vencido. Ya no existe proyectil automático de prueba al iniciar el juego; la verificación manual de proyectiles se hace casteando Firebolt con `RMB`.
 
-Firebolt está definido de forma mínima y data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. `spellCastSystem` procesa commands de tipo `Cast`, obtiene la definición desde el registry y delega la creación del proyectil en `spellProjectileFactory`. Firebolt nace desde el centro del actor, viaja hacia el `targetPoint` del command, usa `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`, y luego queda bajo los sistemas genéricos de proyectiles.
+Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. La definición incluye `id`, `name`, `kind`, `targeting`, `cast` y `effect`. Su efecto actual es `spawnProjectile`; el proyectil usa `speed: 260`, `size: 10`, `damage: 3`, `lifetimeSeconds: 1.4`, `color: "#ff7a33"`, `glyph: "x"`, `fontSize: 16`, `destroyOnWall: true` y `destroyOnHit: true`.
+
+`spellCastSystem` procesa acciones de spell en dos pasos: primero resuelve acciones de casteo en curso y después acepta nuevos `CastCommand` solo si el actor tiene `ActionEconomy` y no tiene `currentAction`. Al iniciar Firebolt guarda `pendingSpell`, pone `currentAction = "spellCast"`, `phase = "windup"` y `timeRemaining = 1.5`. Al terminar el windup crea el proyectil mediante `spellProjectileFactory`, pasa a `phase = "recovery"` por 3 segundos y luego limpia `currentAction`, `phase`, `timeRemaining` y `pendingSpell`.
+
+`spellProjectileFactory` lee el proyectil desde `spellDefinition.effect.projectile`. Firebolt nace desde el centro del actor, viaja hacia el `targetPoint` del command, usa `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`, y luego queda bajo los sistemas genéricos de proyectiles. El renderable de Firebolt usa `shape: "glyph"` y `glyph: "x"`, aprovechando soporte existente del renderer sin modificar `src/render/*`.
 
 La UI mínima muestra feedback de input dividido en dos hemisferios inferiores: teclado en esquina inferior izquierda y mouse/rueda en esquina inferior derecha. El mouse usa una grilla 3x3 con `LMB`, `RMB`, `M5`, `Wheel` y `M4`; `LMB` y `RMB` tienen tamaño visual amplio, mientras `M4` y `M5` quedan compactos. El indicador externo de rueda con número/dirección queda oculto temporalmente; el botón `Wheel` integrado en la grilla sigue visible y el debug panel sigue mostrando el índice de rueda. El teclado muestra `Tab`, `Q`, `W`, `F`, `A`, `R`, `S` y `Space`. La etiqueta superior `Pausa` solo aparece durante `tacticalPaused`. El debug panel sigue mostrando modo, acción preparada, índice de rueda, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
@@ -46,14 +50,14 @@ Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador
 
 Se aplicó un refactor CSS: `style.css` quedó como entrypoint con `@import`, y los estilos de UI se dividieron por responsabilidad en `src/ui/styles/`.
 
-Todavía no hay spell slots, mana, cooldowns, prepared spells, known spells, targeting avanzado, hotbar conectada a casteo, feats/features reales, `UseFeatureCommand`, menú táctico con botones de acción, inventario real, cámara compleja, assets externos, guardado, multiplayer ni servidor.
+Todavía no hay spell slots, mana, cooldown visual, prepared spells, known spells, targeting avanzado, hotbar conectada a casteo, feats/features reales, `UseFeatureCommand`, menú táctico con botones de acción, inventario real, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
 
 - `playerControlSystem`: convierte movement intent en velocidad para entidades `PlayerControlled`.
 - `aiSystem`: procesa entidades `AIControlled`, busca un target válido mediante `aiTargeting` y asigna velocidad de persecución.
 - `movementSystem`: aplica movimiento con `deltaSeconds` y delega la resolución contra tiles a `movementCollision`.
-- `spellCastSystem`: procesa `CastCommand`, obtiene la definición de spell desde `spellRegistry` y crea proyectiles de spell mediante `spellProjectileFactory`.
+- `spellCastSystem`: procesa `CastCommand`, usa `ActionEconomy` para windup/recovery, obtiene definición desde `spellRegistry` y crea proyectiles de spell mediante `spellProjectileFactory` al terminar el windup.
 - `projectileMovementSystem`: mueve entidades con `Projectile`, `Position`, `Velocity` y `Collider`; remueve proyectiles al chocar contra tiles sólidos si `destroyOnWall` está activo.
 - `projectileImpactSystem`: detecta impacto de proyectiles contra criaturas enemigas válidas, aplica `DamageOnHit` mediante `damageRules` y remueve el proyectil si `destroyOnHit` está activo.
 - `actionEconomySystem`: reduce el tiempo restante de acciones en curso.
@@ -93,7 +97,7 @@ Ninguno.
 
 ## Content existente
 
-- `src/content/spells/firebolt.js`: definición mínima data-driven de Firebolt.
+- `src/content/spells/firebolt.js`: definición mínima data-driven de Firebolt como conjuro con targeting, cast y effect.
 - `src/content/spells/spellRegistry.js`: registry mínimo para obtener definiciones de spell por id.
 
 ## Reglas puras existentes
@@ -205,11 +209,12 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone 6 siguiente scope: decidir si Firebolt debe integrarse con economía de acción/cooldown, pausa táctica o hotbar visual. Hacerlo en scopes separados.
+Milestone 6 siguiente scope: decidir si Firebolt debe conectarse a hotbar visual, si el feedback radial debe reconocer `pendingSpell`, o si conviene empezar selección de conjuros. Hacerlo en scopes separados.
 
 ## Riesgos actuales
 
-- Firebolt por `RMB` ignora `ActionEconomy`, recursos y cooldowns; es una decisión temporal de Milestone 6 mínimo.
+- Firebolt por `RMB` usa `ActionEconomy`, pero no tiene spell slots, recursos ni cooldown visual.
+- El feedback radial de UI fue diseñado para ataques melee y puede no representar perfectamente la duración de `pendingSpell` sin un scope posterior de UI.
 - La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
@@ -227,6 +232,17 @@ Milestone 6 siguiente scope: decidir si Firebolt debe integrarse con economía d
 
 ## Decisiones recientes
 
+- Firebolt ahora tiene definición de conjuro con `id`, `name`, `kind`, `targeting`, `cast` y `effect`.
+- Firebolt usa `cast.windupSeconds = 1.5`.
+- Firebolt usa `cast.recoverySeconds = 3` como recovery global de acción.
+- Firebolt usa `effect.type = "spawnProjectile"`.
+- El proyectil de Firebolt vive bajo `effect.projectile`, no directamente bajo la raíz del spell.
+- El proyectil de Firebolt se representa como glyph `x` color `#ff7a33` con `shape: "glyph"`.
+- `ActionEconomy` ahora acepta `pendingSpell`.
+- `spellCastSystem` inicia Firebolt solo si el actor no tiene `currentAction`.
+- Firebolt crea el proyectil al terminar el windup, no al presionar `RMB`.
+- Después de crear el proyectil, Firebolt entra en recovery global de 3 segundos.
+- Durante windup/recovery de Firebolt, melee y nuevos casteos quedan bloqueados por `ActionEconomy.currentAction`.
 - Se eliminó la fixture temporal `createTestProjectile`.
 - `createGameApp` ya no crea proyectiles automáticos al iniciar.
 - La verificación manual de proyectiles ahora se hace casteando Firebolt con `RMB`.
@@ -240,7 +256,7 @@ Milestone 6 siguiente scope: decidir si Firebolt debe integrarse con economía d
 - Se agregó `spellProjectileFactory` para crear proyectiles ECS desde actor, target y definición.
 - Firebolt usa la foundation genérica de proyectiles: `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable`, `Faction`.
 - No se conectó hotbar/UI a casteo.
-- No se agregaron spell slots, mana, cooldowns, prepared spells ni known spells.
+- No se agregaron spell slots, mana, cooldown visual, prepared spells ni known spells.
 - Se agregó foundation mínima de proyectiles genéricos ECS.
 - Se agregaron componentes `Projectile`, `Lifetime` y `DamageOnHit`.
 - Se agregó `projectileMovementSystem` para mover proyectiles y destruirlos contra tiles sólidos.
