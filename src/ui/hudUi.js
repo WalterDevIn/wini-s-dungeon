@@ -1,14 +1,19 @@
+const KEY_CAPS = Object.freeze([
+  { code: "KeyW", label: "W" },
+  { code: "KeyA", label: "A" },
+  { code: "KeyS", label: "S" },
+  { code: "KeyD", label: "D" },
+  { code: "KeyQ", label: "Q" },
+  { code: "KeyF", label: "F" },
+  { code: "Space", label: "Space", wide: true },
+  { code: "LMB", label: "LMB" },
+]);
+
 export function createHudUi(root) {
   root.classList.add("game-ui-root");
   root.innerHTML = `
-    <section class="primary-action-card" aria-label="Acción primaria">
-      <div class="primary-action-orb" data-primary-action-orb>
-        <span class="primary-action-key">LMB</span>
-      </div>
-      <div class="primary-action-copy">
-        <div class="primary-action-title">Ataque</div>
-        <div class="primary-action-state" data-primary-action-state>Listo</div>
-      </div>
+    <section class="key-hud" aria-label="Teclas presionadas">
+      ${KEY_CAPS.map(renderKeyCap).join("")}
     </section>
 
     <section class="debug-panel" aria-label="Feedback de simulación">
@@ -28,8 +33,12 @@ export function createHudUi(root) {
     </section>
   `;
 
-  const primaryActionOrb = root.querySelector("[data-primary-action-orb]");
-  const primaryActionState = root.querySelector("[data-primary-action-state]");
+  const keyCaps = new Map(
+    [...root.querySelectorAll("[data-key-code]")].map((element) => [
+      element.dataset.keyCode,
+      element,
+    ]),
+  );
   const leftButton = root.querySelector("[data-debug-left-button]");
   const lastCommand = root.querySelector("[data-debug-last-command]");
   const action = root.querySelector("[data-debug-action]");
@@ -37,14 +46,11 @@ export function createHudUi(root) {
   const time = root.querySelector("[data-debug-time]");
 
   function update(snapshot) {
-    const isPressed = snapshot.input.leftButtonPressed;
+    updateKeyCaps(keyCaps, snapshot.input);
+
     const actionState = snapshot.playerActionState;
 
-    primaryActionOrb.classList.toggle("is-pressed", isPressed);
-    primaryActionOrb.classList.toggle("is-busy", actionState.status !== "ready");
-    primaryActionState.textContent = getPrimaryActionLabel(isPressed, actionState);
-
-    leftButton.textContent = isPressed ? "Sí" : "No";
+    leftButton.textContent = snapshot.input.leftButtonPressed ? "Sí" : "No";
     lastCommand.textContent = snapshot.lastCommand;
     action.textContent = actionState.currentAction ?? actionState.status;
     phase.textContent = actionState.phase ?? "-";
@@ -56,22 +62,17 @@ export function createHudUi(root) {
   };
 }
 
-function getPrimaryActionLabel(isPressed, actionState) {
-  if (isPressed) {
-    return "Presionado";
-  }
+function renderKeyCap({ code, label, wide = false }) {
+  const classes = ["key-cap", wide ? "key-cap-wide" : ""].filter(Boolean).join(" ");
+  return `<div class="${classes}" data-key-code="${code}">${label}</div>`;
+}
 
-  if (actionState.status === "windup") {
-    return "Preparando golpe";
-  }
+function updateKeyCaps(keyCaps, input) {
+  for (const [keyCode, keyCap] of keyCaps) {
+    const isPressed = keyCode === "LMB"
+      ? input.leftButtonPressed
+      : Boolean(input.pressedKeys[keyCode]);
 
-  if (actionState.status === "recovery") {
-    return "Recuperando";
+    keyCap.classList.toggle("is-pressed", isPressed);
   }
-
-  if (actionState.status === "missing") {
-    return "Sin jugador";
-  }
-
-  return "Listo";
 }
