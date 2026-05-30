@@ -24,7 +24,7 @@ El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y
 
 La UI mínima muestra feedback de input dividido en dos hemisferios inferiores: teclado en esquina inferior izquierda y mouse/rueda en esquina inferior derecha. El mouse usa una grilla 3x3 con `LMB`, `RMB`, `M5`, `Wheel` y `M4`; `LMB` y `RMB` tienen tamaño visual amplio, mientras `M4` y `M5` quedan compactos. El indicador externo de rueda con número/dirección queda oculto temporalmente; el botón `Wheel` integrado en la grilla sigue visible y el debug panel sigue mostrando el índice de rueda. El teclado muestra `Tab`, `Q`, `W`, `F`, `A`, `R`, `S` y `Space`. La etiqueta superior `Pausa` solo aparece durante `tacticalPaused`. El debug panel sigue mostrando modo, acción preparada, índice de rueda, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
-El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy` y `AttackProfile`; esto no modifica daño, tiempos ni reglas de combate.
+El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy` y `AttackProfile`; esto no modifica daño, tiempos ni reglas de combate. El cursor custom se posiciona con `left/top` desde JS y mantiene el centrado con CSS.
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
@@ -166,6 +166,7 @@ Milestone 5.2 o refactor previo: decidir si conviene agregar panel táctico real
 
 ## Decisiones recientes
 
+- Se corrigió el cursor custom para posicionarse con `left/top` desde JS y centrarse con `transform: translate(-50%, -50%)` desde CSS.
 - Se agregó cursor custom tipo `+` como overlay DOM y se ocultó el cursor nativo sobre el juego.
 - Se agregó anillo radial alrededor del cursor para representar `windup` y `recovery` del jugador controlado.
 - El progreso radial se calcula desde `ActionEconomy.timeRemaining` y duración de fase derivada de `AttackProfile`/`pendingAttack`, sin timers propios en UI.
