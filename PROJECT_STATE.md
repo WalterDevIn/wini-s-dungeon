@@ -8,7 +8,7 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 Milestone 5.1 completado: modo táctico pausado mínimo con `Space`, preparación de golpe con `LMB` durante pausa y ejecución del `AttackCommand` preparado al despausar.
 
-Milestone 6 está iniciado: ya existe foundation mínima de proyectiles genéricos ECS y Firebolt mínimo mediante `CastCommand` con botón derecho del mouse. Firebolt ahora usa `ActionEconomy`: tiene windup de 1.5 segundos, recovery global de 3 segundos, bloquea melee y nuevos casteos durante windup/recovery, y genera el proyectil solo al finalizar el windup. Todavía no hay spell slots, recursos, cooldown visual, prepared spells, hotbar conectada a casteo ni menú táctico de conjuros.
+Milestone 6 está iniciado: ya existe foundation mínima de proyectiles genéricos ECS y Firebolt mínimo mediante `CastCommand` con botón derecho del mouse. Firebolt ahora usa `ActionEconomy`: tiene windup de 1.5 segundos, recovery global de 3 segundos, bloquea melee y nuevos casteos durante windup/recovery, y genera el proyectil solo al finalizar el windup. `ActionEconomy.phaseDuration` normaliza el feedback de progreso para cualquier acción activa. Todavía no hay spell slots, recursos, cooldown visual, prepared spells, hotbar conectada a casteo ni menú táctico de conjuros.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -30,7 +30,7 @@ Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `Dam
 
 Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. La definición incluye `id`, `name`, `kind`, `targeting`, `cast` y `effect`. Su efecto actual es `spawnProjectile`; el proyectil usa `speed: 260`, `size: 10`, `damage: 3`, `lifetimeSeconds: 1.4`, `color: "#ff7a33"`, `glyph: "x"`, `fontSize: 16`, `destroyOnWall: true` y `destroyOnHit: true`.
 
-`spellCastSystem` procesa acciones de spell en dos pasos: primero resuelve acciones de casteo en curso y después acepta nuevos `CastCommand` solo si el actor tiene `ActionEconomy` y no tiene `currentAction`. Al iniciar Firebolt guarda `pendingSpell`, pone `currentAction = "spellCast"`, `phase = "windup"` y `timeRemaining = 1.5`. Al terminar el windup crea el proyectil mediante `spellProjectileFactory`, pasa a `phase = "recovery"` por 3 segundos y luego limpia `currentAction`, `phase`, `timeRemaining` y `pendingSpell`.
+`spellCastSystem` procesa acciones de spell en dos pasos: primero resuelve acciones de casteo en curso y después acepta nuevos `CastCommand` solo si el actor tiene `ActionEconomy` y no tiene `currentAction`. Al iniciar Firebolt guarda `pendingSpell`, pone `currentAction = "spellCast"`, `phase = "windup"`, `timeRemaining = 1.5` y `phaseDuration = 1.5`. Al terminar el windup crea el proyectil mediante `spellProjectileFactory`, pasa a `phase = "recovery"` por 3 segundos con `phaseDuration = 3`, y luego limpia `currentAction`, `phase`, `timeRemaining`, `phaseDuration` y `pendingSpell`.
 
 `spellProjectileFactory` lee el proyectil desde `spellDefinition.effect.projectile`. Firebolt nace desde el centro del actor, viaja hacia el `targetPoint` del command, usa `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`, y luego queda bajo los sistemas genéricos de proyectiles. El renderable de Firebolt usa `shape: "glyph"` y `glyph: "x"`, aprovechando soporte existente del renderer sin modificar `src/render/*`.
 
@@ -38,7 +38,7 @@ La UI mínima muestra feedback de input dividido en dos hemisferios inferiores: 
 
 La UI tiene una hotbar visual mínima centrada abajo con tres modos visuales: `inventory`, `spells` y `features`. El modo inicial es `inventory`: muestra 10 slots vacíos agrupados de a 2 en 5 pares y la selección visual deriva de `snapshot.input.mouse.wheelIndex` mediante pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`. Al presionar `Q`, la UI alterna visualmente entre `inventory` y `spells`; al presionar `F`, alterna visualmente entre `inventory` y `features`. Los modos `spells` y `features` muestran los 10 slots vacíos como slots individuales y seleccionan el slot individual `0..9` derivado de `mouse.wheelIndex`. El feedback de selección ahora es crecimiento rápido del par o slot seleccionado, no un marco como señal principal. No existe inventario real, items, spell slots, prepared spells, feats/features reales, `UseFeatureCommand`, uso de objetos ni selección por números todavía.
 
-El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy` y `AttackProfile`; esto no modifica daño, tiempos ni reglas de combate. El cursor custom se posiciona con `left/top` desde JS y mantiene el centrado con CSS.
+El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy.timeRemaining` y `ActionEconomy.phaseDuration`; esto no modifica daño, tiempos ni reglas de combate. El cursor custom se posiciona con `left/top` desde JS y mantiene el centrado con CSS.
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
@@ -57,11 +57,11 @@ Todavía no hay spell slots, mana, cooldown visual, prepared spells, known spell
 - `playerControlSystem`: convierte movement intent en velocidad para entidades `PlayerControlled`.
 - `aiSystem`: procesa entidades `AIControlled`, busca un target válido mediante `aiTargeting` y asigna velocidad de persecución.
 - `movementSystem`: aplica movimiento con `deltaSeconds` y delega la resolución contra tiles a `movementCollision`.
-- `spellCastSystem`: procesa `CastCommand`, usa `ActionEconomy` para windup/recovery, obtiene definición desde `spellRegistry` y crea proyectiles de spell mediante `spellProjectileFactory` al terminar el windup.
+- `spellCastSystem`: procesa `CastCommand`, usa `ActionEconomy` para windup/recovery, setea `phaseDuration`, obtiene definición desde `spellRegistry` y crea proyectiles de spell mediante `spellProjectileFactory` al terminar el windup.
 - `projectileMovementSystem`: mueve entidades con `Projectile`, `Position`, `Velocity` y `Collider`; remueve proyectiles al chocar contra tiles sólidos si `destroyOnWall` está activo.
 - `projectileImpactSystem`: detecta impacto de proyectiles contra criaturas enemigas válidas, aplica `DamageOnHit` mediante `damageRules` y remueve el proyectil si `destroyOnHit` está activo.
 - `actionEconomySystem`: reduce el tiempo restante de acciones en curso.
-- `meleeCombatSystem`: procesa requests de ataque melee genéricas, inicia `windup`, resuelve impacto al terminar el `windup`, aplica daño mitigado si hay objetivo válido y gestiona `recovery`.
+- `meleeCombatSystem`: procesa requests de ataque melee genéricas, inicia `windup`, setea `phaseDuration`, resuelve impacto al terminar el `windup`, aplica daño mitigado si hay objetivo válido y gestiona `recovery`.
 - `lifetimeSystem`: reduce `Lifetime.timeRemaining` y remueve cualquier entidad con lifetime vencido.
 - `deathSystem`: remueve entidades con `Health.current <= 0`.
 - `runSimulationStep`: orquesta el orden de sistemas de simulation para un frame.
@@ -127,7 +127,7 @@ Ninguno.
 - `hudLayout`: contiene template/configuración del HUD de teclado, mouse, rueda, pausa, cursor custom, hotbar visual y debug panel.
 - `hudUpdate`: contiene helpers para actualizar key caps, mouse caps, feedback de rueda, estado táctico, cursor custom, anillo radial de acción y hotbar visual.
 - `quickBarViewState`: contiene estado visual de UI para alternar hotbar entre `inventory`, `spells` y `features` con `Q`/`F` por flanco de presión.
-- `buildUiSnapshot`: construye un snapshot simple para UI con input, estado táctico, último command, estado de acción del jugador, duración de fase y progreso de fase.
+- `buildUiSnapshot`: construye un snapshot simple para UI con input, estado táctico, último command, estado de acción del jugador, duración de fase y progreso de fase usando `ActionEconomy.phaseDuration`.
 - La UI no modifica ECS ni llama sistemas de simulation.
 
 ## CSS existente
@@ -209,12 +209,11 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone 6 siguiente scope: decidir si Firebolt debe conectarse a hotbar visual, si el feedback radial debe reconocer `pendingSpell`, o si conviene empezar selección de conjuros. Hacerlo en scopes separados.
+Milestone 6 siguiente scope: decidir si Firebolt debe conectarse a hotbar visual, si conviene exponer feedback específico de spell cast, o si conviene empezar selección de conjuros. Hacerlo en scopes separados.
 
 ## Riesgos actuales
 
 - Firebolt por `RMB` usa `ActionEconomy`, pero no tiene spell slots, recursos ni cooldown visual.
-- El feedback radial de UI fue diseñado para ataques melee y puede no representar perfectamente la duración de `pendingSpell` sin un scope posterior de UI.
 - La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
@@ -232,6 +231,11 @@ Milestone 6 siguiente scope: decidir si Firebolt debe conectarse a hotbar visual
 
 ## Decisiones recientes
 
+- `ActionEconomy` ahora tiene `phaseDuration` como contrato genérico de duración de fase activa.
+- `meleeCombatSystem` setea `phaseDuration` al iniciar windup y recovery melee.
+- `spellCastSystem` setea `phaseDuration` al iniciar windup y recovery de Firebolt.
+- `buildUiSnapshot` calcula `phaseProgress` usando `ActionEconomy.timeRemaining` y `ActionEconomy.phaseDuration`, sin conocer `AttackProfile`, `pendingAttack` ni `pendingSpell`.
+- El feedback radial queda desacoplado del tipo concreto de acción y puede servir para futuras acciones con windup/recovery.
 - Firebolt ahora tiene definición de conjuro con `id`, `name`, `kind`, `targeting`, `cast` y `effect`.
 - Firebolt usa `cast.windupSeconds = 1.5`.
 - Firebolt usa `cast.recoverySeconds = 3` como recovery global de acción.
@@ -289,7 +293,7 @@ Milestone 6 siguiente scope: decidir si Firebolt debe conectarse a hotbar visual
 - `createGameApp` registra `createMouseInput(window)` para robustecer cursor custom, feedback de mouse, rueda y clicks.
 - Se agregó cursor custom tipo `+` como overlay DOM y se ocultó el cursor nativo sobre el juego.
 - Se agregó anillo radial alrededor del cursor para representar `windup` y `recovery` del jugador controlado.
-- El progreso radial se calcula desde `ActionEconomy.timeRemaining` y duración de fase derivada de `AttackProfile`/`pendingAttack`, sin timers propios en UI.
+- El progreso radial se calcula desde `ActionEconomy.timeRemaining` y `ActionEconomy.phaseDuration`, sin timers propios en UI.
 - `keyboardInput.js` fue dividido para quedar por debajo de 100 líneas y separar tracking de teclado, snapshot visual y API pública.
 - `keyboardKeyState.js` contiene tracking físico/visual de teclado y el toggle táctico consumible.
 - `keyboardSnapshot.js` construye el snapshot visual usado por el HUD.
