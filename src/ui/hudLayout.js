@@ -91,7 +91,6 @@ function renderQuickBarPairs() {
 
     return `
       <div class="quick-bar-pair" data-quick-bar-pair="${pairIndex}">
-        <span class="quick-bar-pair-label">${pairIndex + 1}</span>
         ${slots}
       </div>
     `;
