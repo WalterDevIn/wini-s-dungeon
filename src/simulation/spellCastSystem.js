@@ -11,9 +11,36 @@ const SUPPORTED_EFFECTS = Object.freeze({
   SpawnProjectile: "spawnProjectile",
 });
 
-export function spellCastSystem(world, commands) {
+export function spellCastSystem(world, commands, aimIntent = null) {
+  updatePendingSpellTargets(world, aimIntent);
   resolveSpellActions(world);
   startRequestedSpellCasts(world, commands);
+}
+
+function updatePendingSpellTargets(world, aimIntent) {
+  if (!aimIntent?.targetPoint?.hasPosition) {
+    return;
+  }
+
+  const casters = queryEntities(world, [ComponentType.ActionEconomy]);
+
+  for (const casterId of casters) {
+    const actionEconomy = getComponent(world, casterId, ComponentType.ActionEconomy);
+
+    if (
+      actionEconomy.currentAction !== SPELL_CAST_ACTION ||
+      actionEconomy.phase !== WINDUP_PHASE ||
+      !actionEconomy.pendingSpell
+    ) {
+      continue;
+    }
+
+    actionEconomy.pendingSpell.targetPoint = {
+      x: aimIntent.targetPoint.x,
+      y: aimIntent.targetPoint.y,
+      hasPosition: true,
+    };
+  }
 }
 
 function resolveSpellActions(world) {
@@ -50,7 +77,7 @@ function startRequestedSpellCasts(world, commands) {
       continue;
     }
 
-    if (!command.targetPoint?.hasPosition) {
+    if (!command.initialTargetPoint?.hasPosition) {
       continue;
     }
 
@@ -72,7 +99,11 @@ function startRequestedSpellCasts(world, commands) {
     actionEconomy.phaseDuration = spellDefinition.cast.windupSeconds;
     actionEconomy.pendingSpell = {
       spellDefinition,
-      targetPoint: command.targetPoint,
+      targetPoint: {
+        x: command.initialTargetPoint.x,
+        y: command.initialTargetPoint.y,
+        hasPosition: true,
+      },
       recoverySeconds: spellDefinition.cast.recoverySeconds,
     };
   }
