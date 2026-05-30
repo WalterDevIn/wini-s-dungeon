@@ -12,6 +12,12 @@ export function createMouseInput(target) {
   let pointerY = 0;
   let hasPointerPosition = false;
 
+  function updatePointerPosition(event) {
+    pointerX = event.clientX;
+    pointerY = event.clientY;
+    hasPointerPosition = true;
+  }
+
   function handleMouseDown(event) {
     updatePointerPosition(event);
     pressedButtons.add(event.button);
@@ -94,12 +100,6 @@ export function createMouseInput(target) {
     consumePrimaryClickIntent,
     getSnapshot,
   };
-}
-
-function updatePointerPosition(event) {
-  pointerX = event.clientX;
-  pointerY = event.clientY;
-  hasPointerPosition = true;
 }
 
 function incrementWheelIndex(currentIndex) {
