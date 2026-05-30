@@ -140,9 +140,6 @@ body {
   display: flex;
   gap: 0.45rem;
   padding: 0.5rem;
-  border: 2px solid rgba(244, 241, 232, 0.62);
-  background: rgba(0, 0, 0, 0.72);
-  box-shadow: 0 0 0 1px #000, 0 0 18px rgba(244, 241, 232, 0.08);
 }
 
 .quick-bar-pair {
@@ -150,8 +147,8 @@ body {
   display: flex;
   gap: 0.18rem;
   padding: 0.25rem;
-  border: 2px solid rgba(244, 241, 232, 0.26);
-  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid transparent;
+  background: transparent;
   transition:
     border-color 100ms ease,
     box-shadow 100ms ease,
@@ -162,22 +159,6 @@ body {
   border-color: #00ff66;
   background: rgba(0, 255, 102, 0.08);
   box-shadow: 0 0 14px rgba(0, 255, 102, 0.26);
-}
-
-.quick-bar-pair-label {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 0.18rem);
-  transform: translateX(-50%);
-  color: #d7d0bd;
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1;
-  text-shadow: 0 0 3px #000;
-}
-
-.quick-bar-pair.is-selected .quick-bar-pair-label {
-  color: #00ff66;
 }
 
 .quick-bar-slot {
