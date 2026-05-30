@@ -26,6 +26,8 @@ La UI mínima muestra feedback de input dividido en dos hemisferios inferiores: 
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
+Se aplicó un refactor de input post-Milestone 5.1: `keyboardInput` quedó como factory pública, `keyboardKeyState` contiene tracking físico/visual y toggle táctico, y `keyboardSnapshot` construye el snapshot visual del teclado.
+
 Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador DOM, `hudLayout` contiene template/configuración del HUD, y `hudUpdate` contiene helpers de actualización visual.
 
 Todavía no hay conjuros, menú táctico con botones de acción, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
@@ -74,6 +76,9 @@ Ninguno.
 ## Input existente
 
 - Input de teclado mínimo para movimiento con WASD y flechas.
+- `keyboardInput`: factory pública que expone `getMovementIntent`, `consumeTacticalToggleIntent` y `getSnapshot`.
+- `keyboardKeyState`: tracking de teclas físicas, teclas visuales y toggle táctico de `Space`.
+- `keyboardSnapshot`: construcción del snapshot visual de teclado para HUD.
 - Input de teclado expone snapshot visual por letra de movimiento (`W`, `A`, `R`, `S`) y snapshot visual de `Q`, `F`, `Tab` y `Space`.
 - Input de teclado expone `consumeTacticalToggleIntent()` para alternar pausa táctica con `Space` en keydown inicial.
 - Input de mouse para acción primaria con click izquierdo.
@@ -115,6 +120,8 @@ Ninguno.
 - `src/game/playerQueries.js`
 - `src/game/buildUiSnapshot.js`
 - `src/input/keyboardInput.js`
+- `src/input/keyboardKeyState.js`
+- `src/input/keyboardSnapshot.js`
 - `src/input/mouseInput.js`
 - `src/world/tilemap.js`
 - `src/simulation/runSimulationStep.js`
@@ -150,12 +157,16 @@ Milestone 5.2 o refactor previo: decidir si conviene agregar panel táctico real
 - No existe event bus ni events.
 - `createGameApp` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación.
 - `style.css` supera 100 líneas y concentra estilos base, canvas, HUD, wheel feedback, key caps, estado táctico y debug panel; conviene dividirlo en un scope futuro cuando exista estrategia clara de CSS.
+- `mouseInput.js` está cerca de 100 líneas y acumula click primario, botones extra y rueda; aún aceptable, pero conviene vigilarlo si el mouse empieza a producir acciones reales.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
 - Pedir a la IA implementaciones grandes sin scope.
 
 ## Decisiones recientes
 
+- `keyboardInput.js` fue dividido para quedar por debajo de 100 líneas y separar tracking de teclado, snapshot visual y API pública.
+- `keyboardKeyState.js` contiene tracking físico/visual de teclado y el toggle táctico consumible.
+- `keyboardSnapshot.js` construye el snapshot visual usado por el HUD.
 - El indicador externo de `Wheel` con número/dirección quedó oculto temporalmente por CSS para no romper la silueta del mouse HUD.
 - `LMB` y `RMB` recuperaron tamaño visual amplio mediante columnas más anchas en la grilla del mouse.
 - Se reorganizó visualmente el HUD: teclado abajo izquierda; mouse y rueda abajo derecha.
