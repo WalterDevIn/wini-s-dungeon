@@ -17,6 +17,7 @@ body {
   padding: 0;
   overflow: hidden;
   background: #000;
+  cursor: none;
 }
 
 body {
@@ -32,6 +33,7 @@ body {
   border: 0;
   background: #000;
   image-rendering: pixelated;
+  cursor: none;
 }
 
 #ui-root {
@@ -44,6 +46,64 @@ body {
 .game-ui-root {
   color: #f4f1e8;
   font-family: Georgia, "Times New Roman", serif;
+}
+
+.cursor-feedback {
+  --cursor-progress: 0;
+  --cursor-ring-color: #00ff66;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 50;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: none;
+  place-items: center;
+  pointer-events: none;
+  transform: translate(-100px, -100px);
+}
+
+.cursor-feedback.has-position {
+  display: grid;
+}
+
+.cursor-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -52%);
+  color: #f4f1e8;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 0 3px #000, 0 0 8px rgba(244, 241, 232, 0.42);
+}
+
+.cursor-ring {
+  position: absolute;
+  inset: 0;
+  display: none;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, transparent 58%, #000 59%, #000 64%, transparent 65%),
+    conic-gradient(
+      var(--cursor-ring-color) calc(var(--cursor-progress) * 1turn),
+      rgba(244, 241, 232, 0.16) 0
+    );
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.75);
+}
+
+.cursor-feedback.has-action-progress .cursor-ring {
+  display: block;
+}
+
+.cursor-feedback.is-windup {
+  --cursor-ring-color: #00ff66;
+}
+
+.cursor-feedback.is-recovery {
+  --cursor-ring-color: #ffcc33;
 }
 
 .tactical-status {
