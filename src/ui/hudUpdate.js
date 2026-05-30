@@ -24,6 +24,14 @@ export function updateMouseCaps(mouseCaps, mouseInput) {
   }
 }
 
+export function updateQuickBar(quickBarPairs, mouseInput) {
+  const selectedPairIndex = Math.floor(mouseInput.wheelIndex / 2);
+
+  quickBarPairs.forEach((pairElement, pairIndex) => {
+    pairElement.classList.toggle("is-selected", pairIndex === selectedPairIndex);
+  });
+}
+
 export function updateWheelFeedback(
   wheelFeedback,
   wheelDirection,
