@@ -6,13 +6,15 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 ## Estado actual
 
-Milestone 5 parcial completado: UI mínima de feedback táctico, click izquierdo como acción primaria, primer command mínimo de ataque, coordinación de app extraída y HUD compacto extendido de teclado/mouse antes de Milestone 5.1.
+Milestone 5.1 completado: modo táctico pausado mínimo con `Space`, preparación de golpe con `LMB` durante pausa y ejecución del `AttackCommand` preparado al despausar.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
 
-El jugador ataca con click izquierdo mediante un `AttackCommand` mínimo. El input físico no aplica daño ni modifica ECS; solo produce intención cruda que la capa app convierte en command para la simulación.
+El jugador ataca con click izquierdo mediante un `AttackCommand` mínimo. En modo running, el click izquierdo genera un command inmediato. En modo táctico pausado, el click izquierdo prepara un `AttackCommand` pendiente que se entrega a la simulación al volver a running.
+
+La pausa táctica vive en app/session, no en ECS ni simulation. Mientras el modo táctico está pausado, `runSimulationStep` no se llama; render y HUD siguen actualizándose.
 
 El juego tiene vida, daño, facciones, criatura jugador, enemigo, muerte/remoción de entidad y combate melee mínimo con fases. El ataque entra en `windup`, luego resuelve impacto contra el estado actual del mundo, y después entra en `recovery`.
 
@@ -20,9 +22,9 @@ Regla actual de ataque melee: un ataque confirmado consume la acción aunque no 
 
 El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y distancia, lo persigue en línea recta y ataca al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
 
-La UI mínima muestra un HUD compacto extendido en la esquina inferior derecha con bloque de teclado (`W`, `A`, `R`, `S`, `Q`, `F`, `Tab`, `Space`) y bloque de mouse (`LMB`, `RMB`, `Wheel`, `M4`, `M5`). Además muestra un indicador inferior izquierdo de giro de rueda y una pequeña ventana de feedback con estado de input, índice actual del rodillo, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
+La UI mínima muestra un HUD compacto extendido en la esquina inferior derecha con bloque de teclado (`W`, `A`, `R`, `S`, `Q`, `F`, `Tab`, `Space`) y bloque de mouse (`LMB`, `RMB`, `Wheel`, `M4`, `M5`). Además muestra un indicador inferior izquierdo de giro de rueda, una banda superior de estado táctico y una ventana de feedback con estado de input, índice actual del rodillo, modo táctico, acción preparada, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
-`main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`.
+`main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
 Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador DOM, `hudLayout` contiene template/configuración del HUD, y `hudUpdate` contiene helpers de actualización visual.
 
@@ -38,7 +40,7 @@ Se aplicó un cambio visual pre-Milestone 3: el renderer dibuja una estética ro
 
 Se aplicó un refactor arquitectónico post-Milestone 2: la simulación del frame ahora se orquesta desde `runSimulationStep(...)`, `src/app/main.js` no conoce el orden interno detallado de render ni contiene reglas de simulación, y las reglas puras de daño/rango viven en `src/domain/rules/`.
 
-Todavía no hay pausa táctica real, conjuros, menú táctico con botones de acción, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
+Todavía no hay conjuros, menú táctico con botones de acción, inventario, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
 
@@ -94,6 +96,7 @@ Ninguno.
 
 - Input de teclado mínimo para movimiento con WASD y flechas.
 - Input de teclado expone snapshot visual por letra de movimiento (`W`, `A`, `R`, `S`) y snapshot visual de `Q`, `F`, `Tab` y `Space`.
+- Input de teclado expone `consumeTacticalToggleIntent()` para alternar pausa táctica con `Space` en keydown inicial.
 - Input de mouse para acción primaria con click izquierdo.
 - Input de mouse expone snapshot visual de `LMB`, `RMB`, `M4`, `M5`, dirección/pulso de rueda e índice circular de rueda `0..9`.
 - Input produce movement intent y primary click intent.
@@ -103,9 +106,9 @@ Ninguno.
 ## UI existente
 
 - `hudUi`: orquesta nodos DOM del HUD y delega layout/update en módulos específicos.
-- `hudLayout`: contiene template/configuración del HUD compacto de teclado/mouse, indicador de rueda y debug panel.
-- `hudUpdate`: contiene helpers para actualizar key caps, mouse caps y feedback de rueda.
-- `buildUiSnapshot`: construye un snapshot simple para UI con input, último command y estado de acción del jugador.
+- `hudLayout`: contiene template/configuración del HUD compacto de teclado/mouse, indicador de rueda, estado táctico y debug panel.
+- `hudUpdate`: contiene helpers para actualizar key caps, mouse caps, feedback de rueda y estado táctico.
+- `buildUiSnapshot`: construye un snapshot simple para UI con input, estado táctico, último command y estado de acción del jugador.
 - La UI no modifica ECS ni llama sistemas de simulation.
 
 ## Render existente
@@ -138,8 +141,9 @@ Ninguno.
 
 ## App helpers existentes
 
-- `createGameApp`: coordina creación de mundo, input, renderer, UI, entidades iniciales, game loop, simulation step, render y snapshot UI.
+- `createGameApp`: coordina creación de mundo, input, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico y snapshot UI.
 - `commandMapper`: convierte input de app en commands mínimos, actualmente click izquierdo en `AttackCommand`.
+- `tacticalModeController`: mantiene modo `running`/`tacticalPaused`, command pendiente y liberación del command al despausar.
 
 ## Game helpers existentes
 
@@ -158,6 +162,7 @@ Ninguno.
 - `src/app/main.js`
 - `src/app/createGameApp.js`
 - `src/app/commandMapper.js`
+- `src/app/tacticalModeController.js`
 - `src/ecs/world.js`
 - `src/domain/components.js`
 - `src/domain/commands.js`
@@ -191,15 +196,7 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone 5.1: modo táctico pausado mínimo.
-
-Crear:
-
-- Tecla separada para entrar/salir de modo táctico.
-- Pausa táctica single-player desde app/game loop, no desde simulation.
-- Panel compacto de acciones.
-- Confirmación de acción mediante command.
-- Separación estricta entre UI y simulation.
+Milestone 5.2 o refactor previo: decidir si conviene agregar panel táctico real, cancelar acción preparada, o dividir `style.css` antes de seguir ampliando UI.
 
 ## Riesgos actuales
 
@@ -209,10 +206,10 @@ Crear:
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
 - El click izquierdo queda definido como acción primaria del modo de juego; cuando exista inventario/UI interactiva, la capa app/UI deberá poder capturar clicks para no enviarlos como comandos de combate.
 - `movementIntent` sigue entrando crudo a `runSimulationStep`; es deuda aceptada para movimiento continuo y no debe confundirse con un flujo totalmente command-driven.
-- No existe command buffer; solo hay command mínimo directo por frame.
+- No existe command buffer; solo hay command mínimo directo por frame y un command táctico pendiente máximo en app/session.
 - No existe event bus ni events.
-- Convertir `createGameApp` en otro archivo gigante si Milestone 5.1 no separa bien modo táctico y command mapping.
-- `style.css` supera 100 líneas y concentra estilos base, canvas, HUD, wheel feedback, key caps y debug panel; conviene dividirlo en un scope futuro cuando exista estrategia clara de CSS.
+- `createGameApp` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación.
+- `style.css` supera 100 líneas y concentra estilos base, canvas, HUD, wheel feedback, key caps, estado táctico y debug panel; conviene dividirlo en un scope futuro cuando exista estrategia clara de CSS.
 - Sobrecargar `runSimulationStep` con lógica que debería vivir en sistemas específicos.
 - Convertir `Renderable` en una bolsa de datos visuales demasiado amplia sin diseñar renderer/content.
 - Sobrecargar `movementCollision` si se intenta resolver ahí colisiones generales de proyectiles/criaturas/puertas antes de diseñar `collisionSystem`.
@@ -223,6 +220,11 @@ Crear:
 
 ## Decisiones recientes
 
+- Milestone 5.1 implementó pausa táctica mínima con `Space`.
+- La pausa táctica vive en app/session mediante `tacticalModeController`, no en ECS ni simulation.
+- Mientras está en `tacticalPaused`, `createGameApp` no llama `runSimulationStep`.
+- `LMB` en running conserva ataque inmediato; `LMB` en `tacticalPaused` prepara un `AttackCommand` pendiente.
+- Al salir de pausa, se libera como máximo un command pendiente hacia simulation.
 - Se dividió `hudUi` en `hudLayout` y `hudUpdate` para reducir complejidad y preparar UI futura.
 - `hudUi` queda como orquestador DOM: inyecta template, cachea nodos y delega actualización.
 - Se corrigió el HUD de `R`/`S` para usar letras visuales normalizadas en lugar de posiciones físicas.
