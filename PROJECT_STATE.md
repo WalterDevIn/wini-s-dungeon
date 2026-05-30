@@ -30,6 +30,8 @@ El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom ti
 
 El input de mouse se registra sobre `window` desde `createGameApp` para que el cursor custom, feedback de botones, wheel y click izquierdo sigan respondiendo aunque el overlay/UI o el escalado visual del canvas interfieran con eventos directos sobre el canvas.
 
+Se corrigió un bug de scope en `mouseInput`: `updatePointerPosition` ahora vive dentro de `createMouseInput`, por lo que puede acceder a `pointerX`, `pointerY` y `hasPointerPosition` sin producir `ReferenceError`.
+
 Se aplicó un refactor de input post-Milestone 5.1: `keyboardInput` quedó como factory pública, `keyboardKeyState` contiene tracking físico/visual y toggle táctico, y `keyboardSnapshot` construye el snapshot visual del teclado.
 
 Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador DOM, `hudLayout` contiene template/configuración del HUD, y `hudUpdate` contiene helpers de actualización visual, incluyendo cursor custom y anillo radial de acción.
@@ -168,6 +170,7 @@ Milestone 5.2 o refactor previo: decidir si conviene agregar panel táctico real
 
 ## Decisiones recientes
 
+- Se corrigió el bug `ReferenceError: pointerX is not defined` moviendo `updatePointerPosition` dentro de `createMouseInput`.
 - `createGameApp` ahora registra `createMouseInput(window)` para robustecer cursor custom, feedback de mouse, rueda y clicks.
 - Se corrigió el cursor custom para posicionarse con `left/top` desde JS y centrarse con `transform: translate(-50%, -50%)` desde CSS.
 - Se agregó cursor custom tipo `+` como overlay DOM y se ocultó el cursor nativo sobre el juego.
