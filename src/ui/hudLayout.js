@@ -19,6 +19,11 @@ const MOUSE_CAPS = Object.freeze([
 
 export function renderHudTemplate() {
   return `
+    <div class="cursor-feedback" data-cursor-feedback aria-hidden="true">
+      <div class="cursor-ring" data-cursor-ring></div>
+      <div class="cursor-crosshair">+</div>
+    </div>
+
     <section class="tactical-status" data-tactical-status aria-label="Modo táctico">
       <span class="tactical-status-title">Pausa</span>
     </section>
