@@ -2,10 +2,6 @@ const STONE_CRAWLER_SIZE = 28;
 
 export const stoneCrawlerDefinition = Object.freeze({
   id: "stoneCrawler",
-  position: {
-    x: 240,
-    y: 192,
-  },
   renderable: {
     shape: "glyph",
     glyph: "c",
