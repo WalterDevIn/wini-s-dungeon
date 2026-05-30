@@ -13,6 +13,9 @@ export const ComponentType = Object.freeze({
   AttackProfile: "AttackProfile",
   DefenseProfile: "DefenseProfile",
   DamageReduction: "DamageReduction",
+  Projectile: "Projectile",
+  Lifetime: "Lifetime",
+  DamageOnHit: "DamageOnHit",
 });
 
 export function Position(x, y) {
@@ -81,4 +84,20 @@ export function DefenseProfile({ canBeHit = true } = {}) {
 
 export function DamageReduction({ flat = 0 } = {}) {
   return { flat };
+}
+
+export function Projectile({
+  ownerId = null,
+  destroyOnWall = true,
+  destroyOnHit = true,
+} = {}) {
+  return { ownerId, destroyOnWall, destroyOnHit };
+}
+
+export function Lifetime({ timeRemaining }) {
+  return { timeRemaining };
+}
+
+export function DamageOnHit({ damage }) {
+  return { damage };
 }
