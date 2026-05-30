@@ -25,29 +25,60 @@ export function buildUiSnapshot({
 
 function getPlayerActionState(world, playerId) {
   if (playerId === null) {
-    return {
-      status: "missing",
-      currentAction: null,
-      phase: null,
-      timeRemaining: 0,
-    };
+    return createIdleActionState("missing");
   }
 
   const actionEconomy = getComponent(world, playerId, ComponentType.ActionEconomy);
 
   if (!actionEconomy || !actionEconomy.currentAction) {
-    return {
-      status: "ready",
-      currentAction: null,
-      phase: null,
-      timeRemaining: 0,
-    };
+    return createIdleActionState("ready");
   }
+
+  const attackProfile = getComponent(world, playerId, ComponentType.AttackProfile);
+  const phaseDuration = getActionPhaseDuration(actionEconomy, attackProfile);
+  const phaseProgress = getActionPhaseProgress(actionEconomy.timeRemaining, phaseDuration);
 
   return {
     status: actionEconomy.phase ?? "active",
     currentAction: actionEconomy.currentAction,
     phase: actionEconomy.phase,
     timeRemaining: actionEconomy.timeRemaining,
+    phaseDuration,
+    phaseProgress,
   };
+}
+
+function createIdleActionState(status) {
+  return {
+    status,
+    currentAction: null,
+    phase: null,
+    timeRemaining: 0,
+    phaseDuration: 0,
+    phaseProgress: 0,
+  };
+}
+
+function getActionPhaseDuration(actionEconomy, attackProfile) {
+  if (actionEconomy.phase === "windup") {
+    return attackProfile?.windupSeconds ?? 0;
+  }
+
+  if (actionEconomy.phase === "recovery") {
+    return actionEconomy.pendingAttack?.recoverySeconds ?? attackProfile?.recoverySeconds ?? 0;
+  }
+
+  return 0;
+}
+
+function getActionPhaseProgress(timeRemaining, phaseDuration) {
+  if (phaseDuration <= 0) {
+    return 0;
+  }
+
+  return clamp(1 - timeRemaining / phaseDuration, 0, 1);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
