@@ -19,11 +19,12 @@ export function runSimulationStep({
   deltaSeconds,
   movementIntent,
   commands = [],
+  aimIntent = null,
 }) {
   playerControlSystem(world, movementIntent);
   aiSystem(world);
   movementSystem(world, tilemap, deltaSeconds);
-  spellCastSystem(world, commands);
+  spellCastSystem(world, commands, aimIntent);
   projectileMovementSystem(world, tilemap, deltaSeconds);
   projectileImpactSystem(world);
   actionEconomySystem(world, deltaSeconds);
