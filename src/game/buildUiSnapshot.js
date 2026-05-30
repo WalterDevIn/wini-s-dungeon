@@ -11,6 +11,7 @@ export function buildUiSnapshot({
 }) {
   const playerId = findPlayerEntity(world);
   const playerActionState = getPlayerActionState(world, playerId);
+  const playerHealth = getPlayerHealth(world, playerId);
 
   return {
     input: {
@@ -20,6 +21,7 @@ export function buildUiSnapshot({
     tacticalMode: tacticalModeSnapshot,
     lastCommand: lastCommand?.type ?? "none",
     playerActionState,
+    playerHealth,
   };
 }
 
@@ -47,6 +49,23 @@ function getPlayerActionState(world, playerId) {
   };
 }
 
+function getPlayerHealth(world, playerId) {
+  if (playerId === null) {
+    return createEmptyHealthState();
+  }
+
+  const health = getComponent(world, playerId, ComponentType.Health);
+
+  if (!health) {
+    return createEmptyHealthState();
+  }
+
+  return {
+    current: health.current,
+    max: health.max,
+  };
+}
+
 function createIdleActionState(status) {
   return {
     status,
@@ -55,6 +74,13 @@ function createIdleActionState(status) {
     timeRemaining: 0,
     phaseDuration: 0,
     phaseProgress: 0,
+  };
+}
+
+function createEmptyHealthState() {
+  return {
+    current: 0,
+    max: 0,
   };
 }
 
