@@ -31,6 +31,7 @@ export function createMouseInput(target) {
 
   return {
     consumePrimaryClickIntent: buttonState.consumePrimaryClickIntent,
+    consumeSecondaryClickIntent: buttonState.consumeSecondaryClickIntent,
     getSnapshot,
   };
 }
