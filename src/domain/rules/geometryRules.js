@@ -16,3 +16,12 @@ export function getDistanceBetweenRects(
 
   return Math.hypot(secondCenter.x - firstCenter.x, secondCenter.y - firstCenter.y);
 }
+
+export function rectsOverlap(firstPosition, firstCollider, secondPosition, secondCollider) {
+  return (
+    firstPosition.x < secondPosition.x + secondCollider.width &&
+    firstPosition.x + firstCollider.width > secondPosition.x &&
+    firstPosition.y < secondPosition.y + secondCollider.height &&
+    firstPosition.y + firstCollider.height > secondPosition.y
+  );
+}
