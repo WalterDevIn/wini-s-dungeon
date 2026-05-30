@@ -21,7 +21,7 @@ export function createSpellProjectile({ world, actorId, targetPoint, spellDefini
     return null;
   }
 
-  const projectileDefinition = spellDefinition.projectile;
+  const projectileDefinition = spellDefinition.effect.projectile;
   const origin = getRectCenter(actorPosition, actorCollider);
   const deltaX = targetPoint.x - origin.x;
   const deltaY = targetPoint.y - origin.y;
@@ -54,10 +54,12 @@ export function createSpellProjectile({ world, actorId, targetPoint, spellDefini
     [
       ComponentType.Renderable,
       Renderable({
-        shape: "rect",
+        shape: projectileDefinition.glyph ? "glyph" : "rect",
         width: projectileSize,
         height: projectileSize,
         color: projectileDefinition.color,
+        glyph: projectileDefinition.glyph ?? null,
+        fontSize: projectileDefinition.fontSize ?? projectileSize,
       }),
     ],
     [
