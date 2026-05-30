@@ -24,6 +24,7 @@ export function createHudUi(root) {
     updateQuickBar(
       elements.quickBar,
       elements.quickBarPairs,
+      elements.quickBarSlots,
       snapshot.input.mouse,
       quickBarViewState.getSnapshot(),
     );
@@ -49,6 +50,7 @@ function collectHudElements(root) {
     mouseCaps: collectElementsByDataAttribute(root, "mouseCode", "[data-mouse-code]"),
     quickBar: root.querySelector("[data-quick-bar]"),
     quickBarPairs: [...root.querySelectorAll("[data-quick-bar-pair]")],
+    quickBarSlots: [...root.querySelectorAll("[data-quick-bar-slot]")],
     cursorFeedback: {
       root: root.querySelector("[data-cursor-feedback]"),
       ring: root.querySelector("[data-cursor-ring]"),
