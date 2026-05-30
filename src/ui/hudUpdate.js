@@ -24,15 +24,35 @@ export function updateMouseCaps(mouseCaps, mouseInput) {
   }
 }
 
-export function updateQuickBar(quickBar, quickBarPairs, mouseInput, quickBarView) {
+export function updateQuickBar(
+  quickBar,
+  quickBarPairs,
+  quickBarSlots,
+  mouseInput,
+  quickBarView,
+) {
   const isSpellsMode = quickBarView.mode === "spells";
-  const selectedPairIndex = Math.floor(mouseInput.wheelIndex / 2);
+  const isFeaturesMode = quickBarView.mode === "features";
+  const isInventoryMode = !isSpellsMode && !isFeaturesMode;
+  const selectedSlotIndex = mouseInput.wheelIndex;
+  const selectedPairIndex = Math.floor(selectedSlotIndex / 2);
 
-  quickBar.classList.toggle("is-inventory-mode", !isSpellsMode);
+  quickBar.classList.toggle("is-inventory-mode", isInventoryMode);
   quickBar.classList.toggle("is-spells-mode", isSpellsMode);
+  quickBar.classList.toggle("is-features-mode", isFeaturesMode);
 
   quickBarPairs.forEach((pairElement, pairIndex) => {
-    pairElement.classList.toggle("is-selected", pairIndex === selectedPairIndex);
+    pairElement.classList.toggle(
+      "is-selected",
+      isInventoryMode && pairIndex === selectedPairIndex,
+    );
+  });
+
+  quickBarSlots.forEach((slotElement) => {
+    slotElement.classList.toggle(
+      "is-selected",
+      !isInventoryMode && Number(slotElement.dataset.quickBarSlot) === selectedSlotIndex,
+    );
   });
 }
 
