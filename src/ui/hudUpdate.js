@@ -24,6 +24,16 @@ export function updateMouseCaps(mouseCaps, mouseInput) {
   }
 }
 
+export function updatePlayerHealthBar(playerHealthBar, playerHealth) {
+  const current = Math.max(0, Math.ceil(playerHealth.current));
+  const max = Math.max(0, Math.ceil(playerHealth.max));
+
+  playerHealthBar.innerHTML = Array.from({ length: max }, (_, index) => {
+    const filledClass = index < current ? " is-filled" : "";
+    return `<span class="player-health-pip${filledClass}" aria-hidden="true"></span>`;
+  }).join("");
+}
+
 export function updateQuickBar(
   quickBar,
   quickBarPairs,
