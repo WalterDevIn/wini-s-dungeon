@@ -6,13 +6,13 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 ## Estado actual
 
-Milestone 5 parcial completado: UI mínima de feedback táctico, click izquierdo como acción primaria y primer command mínimo de ataque.
+Milestone 5 parcial completado: UI mínima de feedback táctico, click izquierdo como acción primaria, primer command mínimo de ataque y coordinación de app extraída antes de Milestone 5.1.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
 
-El jugador ataca con click izquierdo mediante un `AttackCommand` mínimo. El input físico no aplica daño ni modifica ECS; solo produce intención cruda que `main.js` convierte en command para la simulación.
+El jugador ataca con click izquierdo mediante un `AttackCommand` mínimo. El input físico no aplica daño ni modifica ECS; solo produce intención cruda que la capa app convierte en command para la simulación.
 
 El juego tiene vida, daño, facciones, criatura jugador, enemigo, muerte/remoción de entidad y combate melee mínimo con fases. El ataque entra en `windup`, luego resuelve impacto contra el estado actual del mundo, y después entra en `recovery`.
 
@@ -21,6 +21,8 @@ Regla actual de ataque melee: un ataque confirmado consume la acción aunque no 
 El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y distancia, lo persigue en línea recta y ataca al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
 
 La UI mínima muestra un indicador visual de click izquierdo / ataque y una pequeña ventana de feedback con estado de input, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
+
+`main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`.
 
 Se aplicó un refactor menor post-Milestone 4 para reducir complejidad de archivos de runtime largos: `aiSystem` delega targeting en `aiTargeting`, `meleeCombatSystem` ya no construye requests de jugador/IA, y la geometría compartida vive en `geometryRules`.
 
@@ -128,6 +130,11 @@ Ninguno.
 - `aiTargeting`: busca el objetivo válido más cercano para una entidad `AIControlled` usando facción, distancia, `DefenseProfile` y componentes requeridos.
 - `meleeAttackRequests`: construye requests de ataque melee desde commands del jugador e IA, sin resolver daño ni fases de acción.
 
+## App helpers existentes
+
+- `createGameApp`: coordina creación de mundo, input, renderer, UI, entidades iniciales, game loop, simulation step, render y snapshot UI.
+- `commandMapper`: convierte input de app en commands mínimos, actualmente click izquierdo en `AttackCommand`.
+
 ## Game helpers existentes
 
 - `playerQueries`: contiene queries de jugador, como `findPlayerEntity`.
@@ -143,6 +150,8 @@ Ninguno.
 - `index.html`
 - `style.css`
 - `src/app/main.js`
+- `src/app/createGameApp.js`
+- `src/app/commandMapper.js`
 - `src/ecs/world.js`
 - `src/domain/components.js`
 - `src/domain/commands.js`
@@ -191,6 +200,10 @@ Crear:
 - El ataque tiene fases, pero el feedback visual todavía es mínimo.
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
 - El click izquierdo queda definido como acción primaria del modo de juego; cuando exista inventario/UI interactiva, la capa app/UI deberá poder capturar clicks para no enviarlos como comandos de combate.
+- `movementIntent` sigue entrando crudo a `runSimulationStep`; es deuda aceptada para movimiento continuo y no debe confundirse con un flujo totalmente command-driven.
+- No existe command buffer; solo hay command mínimo directo por frame.
+- No existe event bus ni events.
+- Convertir `createGameApp` en otro archivo gigante si Milestone 5.1 no separa bien modo táctico y command mapping.
 - Sobrecargar `runSimulationStep` con lógica que debería vivir en sistemas específicos.
 - Convertir `Renderable` en una bolsa de datos visuales demasiado amplia sin diseñar renderer/content.
 - Sobrecargar `movementCollision` si se intenta resolver ahí colisiones generales de proyectiles/criaturas/puertas antes de diseñar `collisionSystem`.
@@ -201,6 +214,9 @@ Crear:
 
 ## Decisiones recientes
 
+- Antes de Milestone 5.1, `main.js` fue reducido a bootstrap.
+- `createGameApp` coordina la app/session y concentra el game loop actual.
+- `commandMapper` contiene la conversión input → command que antes vivía en `main.js`.
 - Milestone 5 parcial movió el ataque del jugador desde `Space` a click izquierdo.
 - Se introdujo `AttackCommand` como primer command mínimo.
 - `mouseInput` produce intención de acción primaria, pero no modifica ECS ni aplica daño.
