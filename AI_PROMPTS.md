@@ -4,6 +4,8 @@ Este archivo contiene las plantillas principales para trabajar con IA en el proy
 
 El objetivo es evitar prompts improvisados, proteger la arquitectura y reducir features aisladas o “burbujas”.
 
+Repositorio: `wini-s-dungeon`.
+
 ## Regla general
 
 La IA puede recibir el zip completo del proyecto para contexto y comodidad, pero eso no significa que pueda modificar todo el proyecto.
@@ -11,15 +13,12 @@ La IA puede recibir el zip completo del proyecto para contexto y comodidad, pero
 En cualquier tarea de código, la IA debe respetar:
 
 - `VISION.md`
-    
 - `ARCHITECTURE.md`
-    
 - `BOUNDARIES.md`
-    
 - `DECISIONS.md`
-    
+- `ROADMAP.md`
 - `PROJECT_STATE.md`
-    
+- `GLOSSARY.md`
 
 Regla central:
 
@@ -74,6 +73,11 @@ Entregá:
 9. Qué debería quedar fuera de la demo.
 10. Recomendación concreta para una primera versión pequeña.
 11. Si la idea es incierta pero prometedora, proponé un experimento aislado.
+12. Veredicto:
+   - pasar a SCOPE
+   - seguir diseñando
+   - hacer spike descartable
+   - descartar/postergar
 
 Restricciones:
 - No propongas multiplayer como requisito inicial.
@@ -87,16 +91,19 @@ Restricciones:
 
 # MODO: SCOPE
 
-Usar este modo cuando la feature ya está decidida, pero todavía no se sabe qué archivos tocar.
+Usar este modo cuando una feature, refactor, bugfix o cambio de contenido ya está decidido, pero todavía no se sabe exactamente qué archivos tocar.
 
 Este modo no escribe código.
 
-Sirve para que la IA inspeccione el proyecto, proponga alcance y detecte riesgos antes de implementar.
+Sirve para que la IA inspeccione el proyecto, proponga alcance, detecte riesgos y produzca un contrato copiable para MODO: IMPLEMENTACIÓN.
 
 ## Plantilla
 
 ```txt
 MODO: SCOPE
+
+Tipo de tarea:
+[feature / refactor / bugfix / cleanup / architecture / content]
 
 Contexto:
 Estoy desarrollando un action rogue top-down con arquitectura ECS data-driven, commands/events, y separación estricta entre UI, render, input y simulation.
@@ -112,53 +119,150 @@ Primero leé:
 - PROJECT_STATE.md
 - GLOSSARY.md
 
-Feature:
-[DESCRIBIR FEATURE]
+Objetivo:
+[DESCRIBIR QUÉ QUIERO LOGRAR]
 
 Resultado esperado:
-[DESCRIBIR QUÉ DEBE PODER HACER EL JUGADOR O EL SISTEMA]
+[DESCRIBIR QUÉ DEBE PODER HACER EL JUGADOR, EL SISTEMA O EL CÓDIGO]
+
+Restricciones específicas:
+[LISTAR RESTRICCIONES SI LAS HAY]
 
 No escribas código.
 No modifiques archivos.
 Solo analizá el scope.
 
 Entregá:
-1. Resumen de la feature.
-2. Archivos que necesitás inspeccionar.
-3. Archivos inspeccionados.
-4. Archivos que proponés modificar.
-5. Archivos que proponés crear.
-6. Archivos que NO deberían tocarse.
-7. Componentes ECS existentes que se usarían.
-8. Componentes ECS nuevos que se necesitarían, si aplica.
-9. Sistemas existentes que se usarían.
-10. Sistemas nuevos que se necesitarían, si aplica.
-11. Commands existentes o nuevos.
-12. Events existentes o nuevos.
-13. Cambios en content/data, si aplica.
-14. Cambios en UI, si aplica.
-15. Cambios en render, si aplica.
-16. Riesgos arquitectónicos.
-17. Riesgos de scope creep.
-18. Infraestructura previa necesaria.
-19. Plan de implementación dividido en pasos pequeños.
-20. Criterios de aceptación.
-21. Pruebas de humo necesarias.
-22. Veredicto: listo para implementar / requiere diseño previo / requiere experimento aislado.
+1. Resumen de la tarea.
+2. Clasificación correcta de la tarea.
+3. Archivos que necesitás inspeccionar.
+4. Archivos inspeccionados.
+5. Diagnóstico.
+6. Archivos que proponés modificar.
+7. Archivos que proponés crear.
+8. Archivos que NO deberían tocarse.
+9. Dueño principal de la lógica:
+   - app
+   - game
+   - simulation
+   - domain
+   - ui
+   - render
+   - input
+   - world
+   - content
+10. Componentes ECS existentes que se usarían.
+11. Componentes ECS nuevos que se necesitarían, si aplica.
+12. Sistemas existentes que se usarían.
+13. Sistemas nuevos que se necesitarían, si aplica.
+14. Commands existentes o nuevos.
+15. Events existentes o nuevos.
+16. Cambios por capa:
+   - app
+   - input
+   - ui
+   - simulation
+   - domain
+   - render
+   - world
+   - content
+17. Riesgos arquitectónicos.
+18. Riesgos de scope creep.
+19. Infraestructura previa necesaria.
+20. Plan de implementación dividido en pasos pequeños.
+21. Criterios de aceptación.
+22. Pruebas de humo necesarias.
+23. Fuera de scope.
+24. Veredicto:
+   - listo para implementar
+   - requiere diseño previo
+   - requiere experimento aislado
+   - requiere dividirse en varios scopes
 
 Reglas:
-- Si la feature rompe ARCHITECTURE.md o BOUNDARIES.md, avisá.
+- Si la tarea rompe ARCHITECTURE.md o BOUNDARIES.md, avisá.
 - Si falta infraestructura previa, proponé implementarla antes.
 - No mezcles UI, render y simulation.
 - No propongas crear lógica especial si existe un sistema genérico adecuado.
-- Si la feature parece demasiado grande, dividila.
+- Si la tarea parece demasiado grande, dividila.
+- Si no podés producir un contrato seguro, no inventes archivos ni decisiones.
+
+Al final de la respuesta, generá un bloque llamado exactamente:
+
+=== CONTRATO DE IMPLEMENTACIÓN ===
+
+Ese bloque debe estar listo para copiar y pegar en MODO: IMPLEMENTACIÓN.
+
+Formato obligatorio del contrato:
+
+Tarea:
+[feature/refactor/bugfix/cleanup/architecture/content + nombre]
+
+Objetivo cerrado:
+[alcance breve, verificable y sin ambigüedad]
+
+Archivos permitidos para modificar:
+- [archivo]
+
+Archivos permitidos para crear:
+- [archivo]
+
+Archivos prohibidos:
+- [archivo/carpeta]
+
+Dueño principal de la lógica:
+[app/game/simulation/domain/ui/render/input/world/content]
+
+Componentes:
+- Usar:
+- Crear:
+
+Sistemas:
+- Usar:
+- Crear:
+
+Commands:
+- Usar:
+- Crear:
+
+Events:
+- Usar:
+- Crear:
+
+Cambios permitidos por capa:
+- app:
+- input:
+- ui:
+- simulation:
+- domain:
+- render:
+- world:
+- content:
+
+Criterios de aceptación:
+- [criterio verificable]
+
+Pruebas de humo:
+- [prueba manual o automatizada]
+
+Fuera de scope:
+- [lo que NO se debe hacer]
+
+Notas de implementación:
+- [advertencias, orden sugerido o restricciones]
+
+Actualización de PROJECT_STATE.md:
+- [no / proponer solamente / modificar si está permitido en archivos permitidos]
+
+Regla de detención:
+Si la implementación necesita tocar algo fuera de este contrato, detenerse y pedir ampliación de scope.
 ```
 
 ---
 
 # MODO: IMPLEMENTACIÓN
 
-Usar este modo solo cuando el scope ya fue aprobado.
+Usar este modo solo cuando ya existe un contrato generado por MODO: SCOPE o cuando el cambio califica como bug trivial según la regla de este archivo.
 
 La IA puede recibir el zip completo, pero solo puede modificar los archivos aprobados.
 
@@ -170,44 +274,30 @@ Puede devolver el zip completo modificado si ese es el flujo más cómodo.
 MODO: IMPLEMENTACIÓN
 
 Contexto:
-Estoy desarrollando un action rogue top-down con arquitectura ECS data-driven. Esta implementación debe respetar ARCHITECTURE.md, BOUNDARIES.md, DECISIONS.md y PROJECT_STATE.md.
+Estoy desarrollando un action rogue top-down con arquitectura ECS data-driven.
 
-Te paso el zip completo para contexto y comodidad, pero solo podés modificar los archivos aprobados.
+Leé primero:
+- PROJECT_STATE.md
+- ARCHITECTURE.md
+- BOUNDARIES.md
+- DECISIONS.md
+- ROADMAP.md
+- GLOSSARY.md
 
-Feature:
-[DESCRIBIR FEATURE]
+Te paso el zip completo para contexto y comodidad, pero solo podés modificar los archivos aprobados en el contrato.
 
-Scope aprobado:
-[PEGAR RESUMEN DEL SCOPE APROBADO]
+Usá este contrato como única autorización de cambios:
 
-Archivos permitidos para modificar:
-- [LISTAR ARCHIVOS]
-
-Archivos permitidos para crear:
-- [LISTAR ARCHIVOS]
-
-Archivos prohibidos:
-- [LISTAR ARCHIVOS O CARPETAS]
-
-Componentes a usar/crear:
-- [LISTAR]
-
-Sistemas a usar/crear:
-- [LISTAR]
-
-Commands a usar/crear:
-- [LISTAR]
-
-Events a usar/crear:
-- [LISTAR]
-
-Criterios de aceptación:
-- [LISTAR CRITERIOS]
+=== CONTRATO DE IMPLEMENTACIÓN ===
+[PEGAR BLOQUE COMPLETO GENERADO POR MODO: SCOPE]
 
 Reglas obligatorias:
-- No modifiques archivos fuera del scope aprobado.
+- No reinterpretés el scope.
+- No agregues features.
+- No agregues archivos fuera del contrato.
+- No modifiques archivos fuera del contrato.
 - Si necesitás tocar otro archivo, detenete y preguntá.
-- No crees estado global nuevo salvo autorización explícita.
+- No crees estado global nuevo salvo autorización explícita en el contrato.
 - No leas DOM desde simulation.
 - No dibujes desde simulation.
 - No apliques reglas desde UI.
@@ -216,32 +306,34 @@ Reglas obligatorias:
 - No crees loops paralelos.
 - No crees un sistema especial si corresponde usar uno genérico.
 - No conviertas la feature en una burbuja aislada.
+- No modifiques PROJECT_STATE.md salvo que esté permitido en el contrato.
 
 Entregá:
 1. Archivos inspeccionados.
 2. Archivos modificados.
 3. Motivo de cada archivo modificado.
-4. Código completo de cada archivo modificado, o zip completo actualizado si corresponde.
-5. Instrucciones de prueba manual.
-6. Pruebas de humo agregadas o recomendadas.
-7. Revisión arquitectónica breve:
+4. Resumen de cambios realizados.
+5. Código completo de cada archivo modificado, o zip completo actualizado si corresponde.
+6. Instrucciones de prueba manual.
+7. Pruebas de humo agregadas o recomendadas.
+8. Revisión arquitectónica breve:
    - ¿Respeta ARCHITECTURE.md?
    - ¿Respeta BOUNDARIES.md?
    - ¿Mezcla UI/render/simulation?
    - ¿Crea burbujas?
    - ¿Duplica lógica?
-8. Riesgos restantes.
-9. Si corresponde, actualización propuesta para PROJECT_STATE.md.
+9. Riesgos restantes.
+10. Si corresponde, actualización aplicada o propuesta para PROJECT_STATE.md.
 
 Importante:
-Si no podés cumplir la feature sin tocar archivos fuera del scope aprobado, no improvises. Detenete y pedí ampliación de scope.
+Si no podés cumplir la tarea sin tocar archivos fuera del contrato, no improvises. Detenete y pedí ampliación de scope.
 ```
 
 ---
 
 # Flujo recomendado
 
-## Feature incierta
+## Idea incierta
 
 ```txt
 DISEÑO → SCOPE → IMPLEMENTACIÓN
@@ -253,16 +345,54 @@ DISEÑO → SCOPE → IMPLEMENTACIÓN
 SCOPE → IMPLEMENTACIÓN
 ```
 
-## Bug simple
-
-```txt
-IMPLEMENTACIÓN con fix mínimo
-```
-
 ## Refactor
 
 ```txt
 SCOPE → IMPLEMENTACIÓN
+```
+
+## Bugfix
+
+```txt
+SCOPE → IMPLEMENTACIÓN
+```
+
+## Bug trivial
+
+Un bug solo puede ir directo a IMPLEMENTACIÓN si cumple todo esto:
+
+- afecta un único archivo;
+- no cruza capas;
+- no cambia arquitectura;
+- no agrega comportamiento nuevo;
+- no toca ECS, simulation, input, UI y render al mismo tiempo;
+- no requiere crear componentes, sistemas, commands ni events;
+- no requiere modificar PROJECT_STATE.md.
+
+Si no cumple todo, debe pasar por SCOPE.
+
+Plantilla mínima para bug trivial:
+
+```txt
+MODO: IMPLEMENTACIÓN
+
+Tipo de tarea:
+bugfix trivial
+
+Archivo permitido para modificar:
+- [ÚNICO ARCHIVO]
+
+Bug:
+[DESCRIBIR BUG]
+
+Comportamiento esperado:
+[DESCRIBIR RESULTADO]
+
+Restricciones:
+- No tocar otros archivos.
+- No agregar features.
+- No refactorizar fuera del arreglo mínimo.
+- Si hace falta tocar otro archivo, detenerse y pedir SCOPE.
 ```
 
 ## Regla final
@@ -270,5 +400,7 @@ SCOPE → IMPLEMENTACIÓN
 Nada grande entra a production code sin pasar por SCOPE.
 
 Nada incierto entra a production code sin pasar por DISEÑO.
+
+Nada que cruce capas entra por bug trivial.
 
 Nada se considera cerrado sin revisión arquitectónica breve al final de IMPLEMENTACIÓN.
