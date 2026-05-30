@@ -6,6 +6,7 @@ export function buildUiSnapshot({
   world,
   keyboardSnapshot,
   mouseSnapshot,
+  tacticalModeSnapshot,
   lastCommand,
 }) {
   const playerId = findPlayerEntity(world);
@@ -16,6 +17,7 @@ export function buildUiSnapshot({
       keyboard: keyboardSnapshot,
       mouse: mouseSnapshot,
     },
+    tacticalMode: tacticalModeSnapshot,
     lastCommand: lastCommand?.type ?? "none",
     playerActionState,
   };
