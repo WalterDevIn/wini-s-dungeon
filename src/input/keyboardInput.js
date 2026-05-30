@@ -14,10 +14,15 @@ const VISUAL_KEYS = Object.freeze(["w", "a", "r", "s", "q", "f", "Tab", "Space"]
 export function createKeyboardInput(target = window) {
   const pressedCodes = new Set();
   const pressedVisualKeys = new Set();
+  let tacticalToggleRequested = false;
 
   function handleKeyDown(event) {
     if (!isTrackedKey(event)) {
       return;
+    }
+
+    if (event.code === "Space" && !pressedCodes.has("Space")) {
+      tacticalToggleRequested = true;
     }
 
     pressedCodes.add(event.code);
@@ -77,6 +82,12 @@ export function createKeyboardInput(target = window) {
     };
   }
 
+  function consumeTacticalToggleIntent() {
+    const wasRequested = tacticalToggleRequested;
+    tacticalToggleRequested = false;
+    return wasRequested;
+  }
+
   function getSnapshot() {
     return {
       movement: {
@@ -96,6 +107,7 @@ export function createKeyboardInput(target = window) {
 
   return {
     getMovementIntent,
+    consumeTacticalToggleIntent,
     getSnapshot,
   };
 }
