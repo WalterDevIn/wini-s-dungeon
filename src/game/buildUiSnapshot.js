@@ -2,12 +2,18 @@ import { getComponent } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
 import { findPlayerEntity } from "./playerQueries.js";
 
-export function buildUiSnapshot({ world, mouseSnapshot, lastCommand }) {
+export function buildUiSnapshot({
+  world,
+  keyboardSnapshot,
+  mouseSnapshot,
+  lastCommand,
+}) {
   const playerId = findPlayerEntity(world);
   const playerActionState = getPlayerActionState(world, playerId);
 
   return {
     input: {
+      pressedKeys: keyboardSnapshot.pressedKeys,
       leftButtonPressed: mouseSnapshot.leftButtonPressed,
     },
     lastCommand: lastCommand?.type ?? "none",
