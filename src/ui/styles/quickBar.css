@@ -6,6 +6,7 @@
   display: flex;
   gap: 0.45rem;
   padding: 0.5rem;
+  align-items: center;
 }
 
 .quick-bar-pair {
@@ -13,32 +14,28 @@
   display: flex;
   gap: 0.18rem;
   padding: 0.25rem;
-  border: 2px solid transparent;
   background: transparent;
+  transform: scale(1);
+  transform-origin: center;
   transition:
-    border-color 100ms ease,
-    box-shadow 100ms ease,
-    background 100ms ease;
+    transform 90ms ease-out,
+    filter 90ms ease-out;
 }
 
-.quick-bar-pair.is-selected {
-  border-color: #00ff66;
-  background: rgba(0, 255, 102, 0.08);
-  box-shadow: 0 0 14px rgba(0, 255, 102, 0.26);
+.quick-bar.is-inventory-mode .quick-bar-pair.is-selected {
+  transform: scale(1.16);
+  filter: drop-shadow(0 0 10px rgba(0, 255, 102, 0.32));
+  z-index: 1;
 }
 
-.quick-bar.is-spells-mode {
+.quick-bar.is-spells-mode,
+.quick-bar.is-features-mode {
   gap: 0.18rem;
 }
 
-.quick-bar.is-spells-mode .quick-bar-pair {
+.quick-bar.is-spells-mode .quick-bar-pair,
+.quick-bar.is-features-mode .quick-bar-pair {
   display: contents;
-}
-
-.quick-bar.is-spells-mode .quick-bar-pair.is-selected {
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
 }
 
 .quick-bar-slot {
@@ -47,4 +44,24 @@
   border: 2px solid rgba(215, 208, 189, 0.85);
   background: rgba(0, 0, 0, 0.86);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
+  transform: scale(1);
+  transform-origin: center;
+  transition:
+    transform 90ms ease-out,
+    border-color 90ms ease-out,
+    box-shadow 90ms ease-out;
+}
+
+.quick-bar.is-spells-mode .quick-bar-slot.is-selected,
+.quick-bar.is-features-mode .quick-bar-slot.is-selected {
+  transform: scale(1.18);
+  border-color: rgba(0, 255, 102, 0.95);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 0 10px rgba(0, 255, 102, 0.28);
+  z-index: 1;
+}
+
+.quick-bar.is-features-mode .quick-bar-slot {
+  border-style: dashed;
 }
