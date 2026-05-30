@@ -1,0 +1,25 @@
+.tactical-status {
+  position: absolute;
+  left: 50%;
+  top: 1.25rem;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.2rem;
+  border: 2px solid #00ff66;
+  background: rgba(0, 0, 0, 0.76);
+  color: #f4f1e8;
+  box-shadow: 0 0 0 1px #000, 0 0 16px rgba(0, 255, 102, 0.24);
+}
+
+.tactical-status.is-paused {
+  display: flex;
+}
+
+.tactical-status-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
