@@ -13,8 +13,8 @@ export function buildUiSnapshot({
 
   return {
     input: {
-      pressedKeys: keyboardSnapshot.pressedKeys,
-      leftButtonPressed: mouseSnapshot.leftButtonPressed,
+      keyboard: keyboardSnapshot,
+      mouse: mouseSnapshot,
     },
     lastCommand: lastCommand?.type ?? "none",
     playerActionState,
