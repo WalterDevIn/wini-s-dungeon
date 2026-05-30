@@ -2,10 +2,6 @@ const RAT_SIZE = 20;
 
 export const ratDefinition = Object.freeze({
   id: "rat",
-  position: {
-    x: 240,
-    y: 192,
-  },
   renderable: {
     shape: "glyph",
     glyph: "r",
