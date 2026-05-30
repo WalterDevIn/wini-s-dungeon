@@ -36,8 +36,6 @@ function collectHudElements(root) {
     mouseCaps: collectElementsByDataAttribute(root, "mouseCode", "[data-mouse-code]"),
     tacticalStatus: {
       root: root.querySelector("[data-tactical-status]"),
-      mode: root.querySelector("[data-tactical-mode]"),
-      pendingAction: root.querySelector("[data-tactical-pending-action]"),
     },
     wheelFeedback: root.querySelector("[data-wheel-feedback]"),
     wheelDirection: root.querySelector("[data-wheel-direction]"),
