@@ -42,6 +42,30 @@ export function updateTacticalStatus(tacticalStatus, tacticalMode) {
   );
 }
 
+export function updateCursorFeedback(cursorFeedback, mouseInput, playerActionState) {
+  const pointer = mouseInput.pointer;
+  const hasPointer = Boolean(pointer?.hasPosition);
+
+  cursorFeedback.root.classList.toggle("has-position", hasPointer);
+
+  if (!hasPointer) {
+    return;
+  }
+
+  cursorFeedback.root.style.transform = `translate(${pointer.x}px, ${pointer.y}px)`;
+
+  const phase = playerActionState.phase;
+  const showRing = phase === "windup" || phase === "recovery";
+
+  cursorFeedback.root.classList.toggle("has-action-progress", showRing);
+  cursorFeedback.root.classList.toggle("is-windup", phase === "windup");
+  cursorFeedback.root.classList.toggle("is-recovery", phase === "recovery");
+  cursorFeedback.ring.style.setProperty(
+    "--cursor-progress",
+    String(playerActionState.phaseProgress ?? 0),
+  );
+}
+
 function getWheelDirectionLabel(direction) {
   if (direction === "up") {
     return "↑";
