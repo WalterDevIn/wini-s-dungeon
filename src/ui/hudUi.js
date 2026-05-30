@@ -2,6 +2,7 @@ import { renderHudTemplate } from "./hudLayout.js";
 import {
   updateKeyboardCaps,
   updateMouseCaps,
+  updateTacticalStatus,
   updateWheelFeedback,
 } from "./hudUpdate.js";
 
@@ -20,6 +21,7 @@ export function createHudUi(root) {
       elements.wheelIndexSmall,
       snapshot.input.mouse,
     );
+    updateTacticalStatus(elements.tacticalStatus, snapshot.tacticalMode);
     updateDebugPanel(elements, snapshot);
   }
 
@@ -32,9 +34,16 @@ function collectHudElements(root) {
   return {
     keyCaps: collectElementsByDataAttribute(root, "keyCode", "[data-key-code]"),
     mouseCaps: collectElementsByDataAttribute(root, "mouseCode", "[data-mouse-code]"),
+    tacticalStatus: {
+      root: root.querySelector("[data-tactical-status]"),
+      mode: root.querySelector("[data-tactical-mode]"),
+      pendingAction: root.querySelector("[data-tactical-pending-action]"),
+    },
     wheelFeedback: root.querySelector("[data-wheel-feedback]"),
     wheelDirection: root.querySelector("[data-wheel-direction]"),
     wheelIndexSmall: root.querySelector("[data-wheel-index-small]"),
+    debugTacticalMode: root.querySelector("[data-debug-tactical-mode]"),
+    debugPendingAction: root.querySelector("[data-debug-pending-action]"),
     leftButton: root.querySelector("[data-debug-left-button]"),
     wheelIndex: root.querySelector("[data-debug-wheel-index]"),
     lastCommand: root.querySelector("[data-debug-last-command]"),
@@ -56,6 +65,8 @@ function collectElementsByDataAttribute(root, dataKey, selector) {
 function updateDebugPanel(elements, snapshot) {
   const actionState = snapshot.playerActionState;
 
+  elements.debugTacticalMode.textContent = snapshot.tacticalMode.mode;
+  elements.debugPendingAction.textContent = snapshot.tacticalMode.pendingAction;
   elements.leftButton.textContent = snapshot.input.mouse.leftButtonPressed ? "Sí" : "No";
   elements.wheelIndex.textContent = String(snapshot.input.mouse.wheelIndex);
   elements.lastCommand.textContent = snapshot.lastCommand;
