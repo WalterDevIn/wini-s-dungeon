@@ -22,6 +22,8 @@ Se aplicó el refactor preventivo `refactor/creature-position-as-spawn-override`
 
 Se agregó `feature/demo-encounter-spawn-list`: existe `src/game/createDemoEncounter.js` como encounter estático de demo. `createGameApp` ahora crea el jugador y luego llama a `createDemoEncounter(world)` en lugar de crear un único `createEnemy(world)`. El encounter inicial spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas usando `createCreature(world, definition, { position })`. El tilemap estático ahora tiene una sala inicial a la izquierda, una sala de encuentro a la derecha y una conexión caminable entre ambas. No hay dungeon generation procedural, puertas, línea de visión ni sistema dinámico de spawn.
 
+Se agregó `feature/enemy-action-progress-indicator`: el renderer dibuja indicadores circulares debajo de enemigos con `AIControlled` durante `windup` y `recovery`. El indicador lee `ActionEconomy.timeRemaining`, `phaseDuration` y `phase` desde ECS, usa verde para windup y amarillo para recovery, y es feedback visual solamente. No modifica simulation, reglas, IA, daño ni tiempos.
+
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
@@ -38,11 +40,11 @@ El juego tiene vida, daño, facciones, criaturas enemigas, muerte/remoción de e
 
 Regla actual de ataque melee: un ataque confirmado consume la acción aunque no impacte. El daño solo se aplica si, al terminar el `windup`, existe un objetivo enemigo válido dentro del alcance. Como melee ya ignora nuevos ataques si `ActionEconomy.currentAction` existe, Firebolt bloquea melee durante su windup y recovery global sin tocar lógica especial de melee.
 
-Los enemigos poseen IA simple con `AIControlled`. Detectan al jugador por facción y distancia, lo persiguen en línea recta y atacan al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
+Los enemigos poseen IA simple con `AIControlled`. Detectan al jugador por facción y distancia, lo persiguen en línea recta y atacan al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador. Durante windup/recovery, el renderer muestra un indicador circular debajo de cada enemigo.
 
 Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`. `projectileMovementSystem` mueve proyectiles y los destruye contra tiles sólidos. `projectileImpactSystem` detecta impacto de proyectiles contra criaturas enemigas, filtra por facción y `DefenseProfile.canBeHit`, aplica daño mitigado con `damageRules` y remueve el proyectil si corresponde. `lifetimeSystem` remueve cualquier entidad con `Lifetime` vencido. Ya no existe proyectil automático de prueba al iniciar el juego; la verificación manual de proyectiles se hace casteando Firebolt con `RMB`.
 
-Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. La definición incluye `id`, `name`, `kind`, `targeting`, `cast` y `effect`. Su efecto actual es `spawnProjectile`; el proyectil usa `speed: 260`, `size: 10`, `damage: 3`, `lifetimeSeconds: 1.4`, `color: "#ff7a33"`, `glyph: "x"`, `fontSize: 16`, `destroyOnWall: true` y `destroyOnHit: true`.
+Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. La definición incluye `id`, `name`, `kind`, `targeting`, `cast` y `effect`. Su efecto actual es `spawnProjectile`; el proyectil usa `speed: 260`, `size: 10`, `damage: 3`, `lifetimeSeconds: 1.4`, `color: "#ff7a33", glyph: "x", fontSize: 16, destroyOnWall: true y destroyOnHit: true`.
 
 `spellCastSystem` procesa acciones de spell en tres pasos: primero actualiza targets pendientes de spells en windup usando `aimIntent`, luego resuelve acciones de casteo en curso, y después acepta nuevos `CastCommand` solo si el actor tiene `ActionEconomy` disponible mediante `canStartAction`. Al iniciar Firebolt usa `startAction` para guardar `pendingSpell`, poner `currentAction = "spellCast"`, `phase = "windup"`, `timeRemaining = 1.5` y `phaseDuration = 1.5`. Durante windup, `pendingSpell.targetPoint` se actualiza con el último `aimIntent.targetPoint` válido. Al terminar el windup crea el proyectil mediante `spellProjectileFactory` hacia ese último target válido, usa `transitionActionPhase` para pasar a `recovery` por 3 segundos con `phaseDuration = 3`, y luego usa `clearAction`.
 
@@ -114,6 +116,13 @@ Ninguno.
 - `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature` con posición inicial `{ x: 96, y: 96 }`.
 - `src/game/createEnemy.js`: wrapper legacy/demo que conserva `createEnemy(world)`, obtiene `goblinSkirmisher` desde content y delega en `createCreature` con posición inicial `{ x: 240, y: 192 }`, pero el arranque actual usa `createDemoEncounter` en su lugar.
 - `src/game/createDemoEncounter.js`: encounter estático de demo que spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas.
+
+## Render existente
+
+- `src/render/canvasRenderer.js`: renderiza mapa, entidades y action indicators.
+- `src/render/drawMap.js`: dibuja el tilemap estático.
+- `src/render/drawEntities.js`: dibuja entidades renderizables.
+- `src/render/drawActionIndicators.js`: dibuja indicadores circulares de progreso bajo enemigos `AIControlled` durante `windup` y `recovery`.
 
 ## Reglas puras existentes
 
@@ -207,6 +216,7 @@ Ninguno.
 - `src/render/canvasRenderer.js`
 - `src/render/drawMap.js`
 - `src/render/drawEntities.js`
+- `src/render/drawActionIndicators.js`
 
 ## Próximo objetivo
 
@@ -237,14 +247,13 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
-- Se agregó `src/game/createDemoEncounter.js`.
-- `createDemoEncounter(world)` spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` usando definiciones de content y posiciones explícitas.
-- `createGameApp` ahora llama a `createDemoEncounter(world)` después de `createPlayer(world)`.
-- `createGameApp` ya no llama a `createEnemy(world)` en el arranque actual, para evitar duplicar el goblin.
-- `createEnemy(world)` se conserva como wrapper legacy/demo simple.
-- `tilemap.js` cambió a un layout estático con sala inicial, sala de encuentro y conexión caminable.
-- No se creó dungeon generation procedural.
-- No se crearon puertas, línea de visión, sistemas nuevos, commands, events, componentes, event bus ni command buffer.
+- Se agregó `src/render/drawActionIndicators.js`.
+- `canvasRenderer` ahora llama `drawActionIndicators` después de `drawEntities`.
+- Los indicadores de acción se dibujan solo para entidades con `AIControlled`, `Position`, `Renderable` y `ActionEconomy`.
+- Los indicadores aparecen solo durante `windup` o `recovery`.
+- Windup usa verde `#00ff66`; recovery usa amarillo `#ffcc33`.
+- El progreso visual usa `1 - timeRemaining / phaseDuration` con clamp `0..1`.
+- Esta feature es solo feedback visual en render; no modifica simulation, reglas, IA, daño, tiempos, UI, input ni CSS.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
