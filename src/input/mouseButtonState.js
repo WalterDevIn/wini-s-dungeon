@@ -1,6 +1,7 @@
 export function createMouseButtonState({ pointerState }) {
   const pressedButtons = new Set();
   let primaryClickRequested = false;
+  let secondaryClickRequested = false;
 
   function handleMouseDown(event) {
     pointerState.updatePointerPosition(event);
@@ -8,6 +9,10 @@ export function createMouseButtonState({ pointerState }) {
 
     if (event.button === 0) {
       primaryClickRequested = true;
+    }
+
+    if (event.button === 2) {
+      secondaryClickRequested = true;
     }
 
     event.preventDefault();
@@ -25,6 +30,12 @@ export function createMouseButtonState({ pointerState }) {
     return wasRequested;
   }
 
+  function consumeSecondaryClickIntent() {
+    const wasRequested = secondaryClickRequested;
+    secondaryClickRequested = false;
+    return wasRequested;
+  }
+
   function getSnapshot() {
     return {
       leftButtonPressed: pressedButtons.has(0),
@@ -38,6 +49,7 @@ export function createMouseButtonState({ pointerState }) {
     handleMouseDown,
     handleMouseUp,
     consumePrimaryClickIntent,
+    consumeSecondaryClickIntent,
     getSnapshot,
   };
 }
