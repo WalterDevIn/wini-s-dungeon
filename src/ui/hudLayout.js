@@ -31,7 +31,7 @@ export function renderHudTemplate() {
       <span class="tactical-status-title">Pausa</span>
     </section>
 
-    <section class="quick-bar" aria-label="Inventario rápido visual">
+    <section class="quick-bar" data-quick-bar aria-label="Barra rápida visual">
       ${renderQuickBarPairs()}
     </section>
 
