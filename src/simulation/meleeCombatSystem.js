@@ -39,6 +39,7 @@ function startMeleeAttack(world, attackerId, actionEconomy) {
   actionEconomy.currentAction = MELEE_ATTACK_ACTION;
   actionEconomy.phase = WINDUP_PHASE;
   actionEconomy.timeRemaining = attackProfile.windupSeconds;
+  actionEconomy.phaseDuration = attackProfile.windupSeconds;
   actionEconomy.pendingAttack = {
     damage: attackProfile.damage,
     range: attackProfile.range,
@@ -59,6 +60,7 @@ function resolveMeleeAction(world, attackerId, actionEconomy) {
     resolveMeleeImpact(world, attackerId, actionEconomy);
     actionEconomy.phase = RECOVERY_PHASE;
     actionEconomy.timeRemaining = actionEconomy.pendingAttack.recoverySeconds;
+    actionEconomy.phaseDuration = actionEconomy.pendingAttack.recoverySeconds;
     return;
   }
 
@@ -88,5 +90,6 @@ function clearCurrentAction(actionEconomy) {
   actionEconomy.currentAction = null;
   actionEconomy.phase = null;
   actionEconomy.timeRemaining = 0;
+  actionEconomy.phaseDuration = 0;
   actionEconomy.pendingAttack = null;
 }
