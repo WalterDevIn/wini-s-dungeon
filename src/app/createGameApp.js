@@ -63,6 +63,7 @@ export function createGameApp({ canvas, context, uiRoot }) {
         deltaSeconds,
         movementIntent: keyboardInput.getMovementIntent(),
         commands,
+        aimIntent: createAimIntent(mouseInput),
       });
     }
 
@@ -82,5 +83,25 @@ export function createGameApp({ canvas, context, uiRoot }) {
 
   return {
     start,
+  };
+}
+
+function createAimIntent(mouseInput) {
+  const pointer = mouseInput.getSnapshot().pointer;
+
+  if (!pointer.hasPosition) {
+    return {
+      targetPoint: {
+        hasPosition: false,
+      },
+    };
+  }
+
+  return {
+    targetPoint: {
+      x: pointer.x,
+      y: pointer.y,
+      hasPosition: true,
+    },
   };
 }
