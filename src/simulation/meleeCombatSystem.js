@@ -1,5 +1,11 @@
 import { getComponent, queryEntities } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
+import {
+  canStartAction,
+  clearAction,
+  startAction,
+  transitionActionPhase,
+} from "../domain/rules/actionEconomyRules.js";
 import { applyDamage } from "../domain/rules/damageRules.js";
 import { findFirstMeleeTarget } from "./helpers/meleeHitDetection.js";
 
@@ -30,21 +36,22 @@ export function meleeCombatSystem(world, attackRequests = []) {
 }
 
 function startMeleeAttack(world, attackerId, actionEconomy) {
-  if (actionEconomy.currentAction) {
+  if (!canStartAction(actionEconomy)) {
     return;
   }
 
   const attackProfile = getComponent(world, attackerId, ComponentType.AttackProfile);
 
-  actionEconomy.currentAction = MELEE_ATTACK_ACTION;
-  actionEconomy.phase = WINDUP_PHASE;
-  actionEconomy.timeRemaining = attackProfile.windupSeconds;
-  actionEconomy.phaseDuration = attackProfile.windupSeconds;
-  actionEconomy.pendingAttack = {
-    damage: attackProfile.damage,
-    range: attackProfile.range,
-    recoverySeconds: attackProfile.recoverySeconds,
-  };
+  startAction(actionEconomy, {
+    currentAction: MELEE_ATTACK_ACTION,
+    phase: WINDUP_PHASE,
+    duration: attackProfile.windupSeconds,
+    pendingAttack: {
+      damage: attackProfile.damage,
+      range: attackProfile.range,
+      recoverySeconds: attackProfile.recoverySeconds,
+    },
+  });
 }
 
 function resolveMeleeAction(world, attackerId, actionEconomy) {
@@ -58,14 +65,15 @@ function resolveMeleeAction(world, attackerId, actionEconomy) {
 
   if (actionEconomy.phase === WINDUP_PHASE) {
     resolveMeleeImpact(world, attackerId, actionEconomy);
-    actionEconomy.phase = RECOVERY_PHASE;
-    actionEconomy.timeRemaining = actionEconomy.pendingAttack.recoverySeconds;
-    actionEconomy.phaseDuration = actionEconomy.pendingAttack.recoverySeconds;
+    transitionActionPhase(actionEconomy, {
+      phase: RECOVERY_PHASE,
+      duration: actionEconomy.pendingAttack.recoverySeconds,
+    });
     return;
   }
 
   if (actionEconomy.phase === RECOVERY_PHASE) {
-    clearCurrentAction(actionEconomy);
+    clearAction(actionEconomy);
   }
 }
 
@@ -84,12 +92,4 @@ function resolveMeleeImpact(world, attackerId, actionEconomy) {
   );
 
   applyDamage(targetHealth, actionEconomy.pendingAttack.damage, targetDamageReduction);
-}
-
-function clearCurrentAction(actionEconomy) {
-  actionEconomy.currentAction = null;
-  actionEconomy.phase = null;
-  actionEconomy.timeRemaining = 0;
-  actionEconomy.phaseDuration = 0;
-  actionEconomy.pendingAttack = null;
 }
