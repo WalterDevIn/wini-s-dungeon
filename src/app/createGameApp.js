@@ -49,6 +49,7 @@ export function createGameApp({ canvas, context, uiRoot }) {
     hudUi.update(
       buildUiSnapshot({
         world,
+        keyboardSnapshot: keyboardInput.getSnapshot(),
         mouseSnapshot: mouseInput.getSnapshot(),
         lastCommand,
       }),
