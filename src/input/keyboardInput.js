@@ -9,34 +9,41 @@ const MOVEMENT_KEYS = Object.freeze({
   KeyD: { x: 1, y: 0 },
 });
 
-const VISUAL_KEYS = Object.freeze([
-  "KeyW",
-  "KeyA",
-  "KeyS",
-  "KeyD",
-  "KeyQ",
-  "KeyF",
-  "Space",
-]);
+const VISUAL_KEYS = Object.freeze(["q", "f", "Tab", "Space"]);
 
 export function createKeyboardInput(target = window) {
-  const pressedKeys = new Set();
+  const pressedCodes = new Set();
+  const pressedVisualKeys = new Set();
 
   function handleKeyDown(event) {
-    if (!isTrackedKey(event.code)) {
+    if (!isTrackedKey(event)) {
       return;
     }
 
-    pressedKeys.add(event.code);
+    pressedCodes.add(event.code);
+
+    const visualKey = getVisualKey(event);
+
+    if (visualKey) {
+      pressedVisualKeys.add(visualKey);
+    }
+
     event.preventDefault();
   }
 
   function handleKeyUp(event) {
-    if (!isTrackedKey(event.code)) {
+    if (!isTrackedKey(event)) {
       return;
     }
 
-    pressedKeys.delete(event.code);
+    pressedCodes.delete(event.code);
+
+    const visualKey = getVisualKey(event);
+
+    if (visualKey) {
+      pressedVisualKeys.delete(visualKey);
+    }
+
     event.preventDefault();
   }
 
@@ -47,7 +54,7 @@ export function createKeyboardInput(target = window) {
     let x = 0;
     let y = 0;
 
-    for (const keyCode of pressedKeys) {
+    for (const keyCode of pressedCodes) {
       const direction = MOVEMENT_KEYS[keyCode];
 
       if (!direction) {
@@ -72,9 +79,18 @@ export function createKeyboardInput(target = window) {
 
   function getSnapshot() {
     return {
-      pressedKeys: Object.fromEntries(
-        VISUAL_KEYS.map((keyCode) => [keyCode, pressedKeys.has(keyCode)]),
-      ),
+      movement: {
+        moveUp: pressedCodes.has("KeyW") || pressedCodes.has("ArrowUp"),
+        moveLeft: pressedCodes.has("KeyA") || pressedCodes.has("ArrowLeft"),
+        moveRight: pressedCodes.has("KeyD") || pressedCodes.has("ArrowRight"),
+        moveDown: pressedCodes.has("KeyS") || pressedCodes.has("ArrowDown"),
+      },
+      pressedKeys: {
+        q: pressedVisualKeys.has("q"),
+        f: pressedVisualKeys.has("f"),
+        Tab: pressedVisualKeys.has("Tab"),
+        Space: pressedVisualKeys.has("Space"),
+      },
     };
   }
 
@@ -84,6 +100,24 @@ export function createKeyboardInput(target = window) {
   };
 }
 
-function isTrackedKey(keyCode) {
-  return Boolean(MOVEMENT_KEYS[keyCode]) || VISUAL_KEYS.includes(keyCode);
+function isTrackedKey(event) {
+  return Boolean(MOVEMENT_KEYS[event.code]) || getVisualKey(event) !== null;
+}
+
+function getVisualKey(event) {
+  if (event.code === "Tab") {
+    return "Tab";
+  }
+
+  if (event.code === "Space") {
+    return "Space";
+  }
+
+  const key = event.key.toLowerCase();
+
+  if (VISUAL_KEYS.includes(key)) {
+    return key;
+  }
+
+  return null;
 }
