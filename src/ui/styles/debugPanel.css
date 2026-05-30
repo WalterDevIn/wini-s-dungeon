@@ -1,0 +1,37 @@
+.debug-panel {
+  position: absolute;
+  right: 1.25rem;
+  top: 1.25rem;
+  width: 18rem;
+  padding: 0.9rem 1rem;
+  border: 3px solid #f4f1e8;
+  background: rgba(0, 0, 0, 0.82);
+  box-shadow: 0 0 0 1px #000, 0 0 22px rgba(244, 241, 232, 0.12);
+}
+
+.debug-panel-title {
+  margin-bottom: 0.65rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 0.85rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.debug-grid dt {
+  color: #d7d0bd;
+}
+
+.debug-grid dd {
+  margin: 0;
+  text-align: right;
+  color: #f4f1e8;
+}
