@@ -4,6 +4,7 @@ import {
   updateCursorFeedback,
   updateKeyboardCaps,
   updateMouseCaps,
+  updatePlayerHealthBar,
   updateQuickBar,
   updateTacticalStatus,
   updateWheelFeedback,
@@ -21,6 +22,7 @@ export function createHudUi(root) {
 
     updateKeyboardCaps(elements.keyCaps, snapshot.input.keyboard);
     updateMouseCaps(elements.mouseCaps, snapshot.input.mouse);
+    updatePlayerHealthBar(elements.playerHealthBar, snapshot.playerHealth);
     updateQuickBar(
       elements.quickBar,
       elements.quickBarPairs,
@@ -48,6 +50,7 @@ function collectHudElements(root) {
   return {
     keyCaps: collectElementsByDataAttribute(root, "keyCode", "[data-key-code]"),
     mouseCaps: collectElementsByDataAttribute(root, "mouseCode", "[data-mouse-code]"),
+    playerHealthBar: root.querySelector("[data-player-health-bar]"),
     quickBar: root.querySelector("[data-quick-bar]"),
     quickBarPairs: [...root.querySelectorAll("[data-quick-bar-pair]")],
     quickBarSlots: [...root.querySelectorAll("[data-quick-bar-slot]")],
