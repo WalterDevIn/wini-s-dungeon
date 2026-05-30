@@ -9,7 +9,7 @@ const MOVEMENT_KEYS = Object.freeze({
   KeyD: { x: 1, y: 0 },
 });
 
-const VISUAL_KEYS = Object.freeze(["q", "f", "Tab", "Space"]);
+const VISUAL_KEYS = Object.freeze(["w", "a", "r", "s", "q", "f", "Tab", "Space"]);
 
 export function createKeyboardInput(target = window) {
   const pressedCodes = new Set();
@@ -80,10 +80,10 @@ export function createKeyboardInput(target = window) {
   function getSnapshot() {
     return {
       movement: {
-        moveUp: pressedCodes.has("KeyW") || pressedCodes.has("ArrowUp"),
-        moveLeft: pressedCodes.has("KeyA") || pressedCodes.has("ArrowLeft"),
-        moveRight: pressedCodes.has("KeyD") || pressedCodes.has("ArrowRight"),
-        moveDown: pressedCodes.has("KeyS") || pressedCodes.has("ArrowDown"),
+        moveUp: pressedVisualKeys.has("w"),
+        moveLeft: pressedVisualKeys.has("a"),
+        moveRight: pressedVisualKeys.has("r"),
+        moveDown: pressedVisualKeys.has("s"),
       },
       pressedKeys: {
         q: pressedVisualKeys.has("q"),
