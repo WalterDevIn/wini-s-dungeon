@@ -21,7 +21,7 @@ export function CastCommand({
     type: CommandType.Cast,
     actorId,
     spellId,
-    targetPoint,
+    initialTargetPoint: targetPoint,
     source,
   };
 }
