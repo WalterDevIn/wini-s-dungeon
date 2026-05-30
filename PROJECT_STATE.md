@@ -18,13 +18,15 @@ Se aplicó el refactor preventivo `refactor/creature-content-definitions`: las d
 
 Se agregó `content/basic-creature-roster-rat-bat-stonecrawler`: existen definiciones de content para `rat`, `bat` y `stoneCrawler`, registradas en `creatureRegistry`.
 
-Se aplicó `refactor/creature-position-as-spawn-override`: las definiciones de `src/content/creatures` ya no contienen `position`. La posición ahora es dato de spawn y se pasa a `createCreature(world, definition, { position })`. `createPlayer` conserva la posición inicial `{ x: 96, y: 96 }`.
+Se aplicó `refactor/creature-position-as-spawn-override`: las definiciones de `src/content/creatures` ya no contienen `position`. La posición ahora es dato de spawn y se pasa a `createCreature(world, definition, { position })`.
 
-Se agregó `feature/demo-encounter-spawn-list`: existe `src/game/createDemoEncounter.js` como encounter estático de demo. `createGameApp` crea el jugador y luego llama a `createDemoEncounter(world)` en lugar de crear un único `createEnemy(world)`. El encounter inicial spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas. El tilemap estático tiene sala inicial, sala de encuentro y una conexión caminable. No hay dungeon generation procedural, puertas, línea de visión ni sistema dinámico de spawn.
+Se agregó `feature/demo-encounter-spawn-list`: existe `src/game/createDemoEncounter.js` como encounter estático de demo. `createGameApp` crea el jugador y luego llama a `createDemoEncounter(world)` en lugar de crear un único `createEnemy(world)`. El encounter inicial spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas. No hay dungeon generation procedural, puertas, línea de visión ni sistema dinámico de spawn.
 
 Se agregó `feature/enemy-action-progress-indicator`: el renderer dibuja indicadores circulares para enemigos con `AIControlled` durante `windup` y `recovery`. El indicador lee `ActionEconomy.timeRemaining`, `phaseDuration` y `phase` desde ECS, usa verde para windup y amarillo para recovery, y es feedback visual solamente.
 
 Se agregó `feature/player-health-bar-and-grounded-action-indicators`: los indicadores enemigos se corrigieron para quedar centrados en la entidad como círculo de suelo, no literalmente debajo del sprite. La UI muestra una barra de vida read-only sobre la hotbar/inventario, alineada a la izquierda, con un cuadradito por punto de vida máxima del jugador y estado lleno/vacío según `Health.current`. La vida se expone mediante `buildUiSnapshot`; UI no lee ECS directamente fuera del flujo existente. No se modificó simulation ni reglas.
+
+Se agregó `feature/expanded-static-palace-like-tilemap`: `src/world/tilemap.js` ahora contiene un mapa estático más grande, inspirado en una planta palacial, con sala central amplia, habitaciones pegadas, corredores principales de 2 tiles y algunos pasillos estrechos de 1 tile. `createPlayer` reubica el spawn inicial en el sector inferior del mapa y `createDemoEncounter` distribuye `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` en zonas caminables separadas. No se implementaron chunks, generación procedural, puertas, cámara, línea de visión ni nuevos símbolos de tile.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -107,9 +109,9 @@ Ninguno.
 ## Factories existentes
 
 - `src/domain/factories/createCreature.js`: factory mínima para crear criaturas ECS desde una definición de content y datos de spawn explícitos, actualmente `position`, con componentes comunes y controles opcionales `PlayerControlled` o `AIControlled`.
-- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature` con posición inicial `{ x: 96, y: 96 }`.
+- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature` con posición inicial `{ x: 480, y: 624 }`.
 - `src/game/createEnemy.js`: wrapper legacy/demo que conserva `createEnemy(world)`, obtiene `goblinSkirmisher` desde content y delega en `createCreature` con posición inicial `{ x: 240, y: 192 }`, pero el arranque actual usa `createDemoEncounter` en su lugar.
-- `src/game/createDemoEncounter.js`: encounter estático de demo que spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas.
+- `src/game/createDemoEncounter.js`: encounter estático de demo que spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas adaptadas al mapa estático expandido.
 
 ## Render existente
 
@@ -214,12 +216,13 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone Pre-7 siguiente scope recomendado: validar el encounter estático y luego elegir entre `feature/inventory-trait-foundation` o Milestone 7 `doors-and-vision`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador.
+Milestone Pre-7 siguiente scope recomendado: validar el encounter estático expandido y luego elegir entre `feature/inventory-trait-foundation` o Milestone 7 `doors-and-vision`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador.
 
 Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reutilizar `actionEconomyRules` en lugar de duplicar protocolo de `ActionEconomy` dentro de cada sistema.
 
 ## Riesgos actuales
 
+- El mapa estático expandido es más grande que el anterior, pero todavía no existe cámara dedicada; la parte principal debe mantenerse razonablemente visible hasta implementar cámara/scroll.
 - Firebolt por `RMB` usa `ActionEconomy`, pero no tiene spell slots, recursos ni cooldown visual.
 - `spellCastSystem` todavía concentra varias responsabilidades: actualización de target, validación de spell, resolución de fase y resolución de efecto. No partir todavía salvo que aparezca un segundo spell o segundo effect type, o que el archivo siga creciendo.
 - `createCreature` todavía recibe definiciones con estructura mínima; no existe sistema de species/archetype/progression y no debe agregarse sin scope.
@@ -241,6 +244,10 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
+- Se reemplazó el tilemap de demo por una planta estática expandida de 24x15 tiles, con sala central, habitaciones laterales pegadas, corredores de 2 tiles y pasillos de 1 tile.
+- `createPlayer` ahora posiciona al jugador en `{ x: 480, y: 624 }`, dentro de una zona caminable del sector inferior.
+- `createDemoEncounter` reubicó `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` en posiciones caminables separadas del mapa expandido.
+- No se agregaron chunks, generación procedural, puertas, cámara, línea de visión, nuevos símbolos de tile, componentes, sistemas, commands ni events.
 - Se corrigió `drawActionIndicators` para centrar el ring enemigo sobre la entidad usando `renderable.height * 0.58`.
 - `buildUiSnapshot` ahora expone `playerHealth` leyendo `Health` del jugador.
 - `hudLayout` agregó `data-player-health-bar` sobre la hotbar.
