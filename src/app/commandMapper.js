@@ -3,10 +3,15 @@ import { findPlayerEntity } from "../game/playerQueries.js";
 
 const PRIMARY_SPELL_ID = "firebolt";
 
-export function collectCommandsFromInput({ world, mouseInput }) {
+export function collectCommandsFromInput({ world, mouseInput, mouseSnapshot, screenToWorldPoint }) {
   const commands = [];
   const attackCommand = consumeAttackCommandFromPrimaryClick({ world, mouseInput });
-  const castCommand = consumeFireboltCommandFromSecondaryClick({ world, mouseInput });
+  const castCommand = consumeFireboltCommandFromSecondaryClick({
+    world,
+    mouseInput,
+    mouseSnapshot,
+    screenToWorldPoint,
+  });
 
   if (attackCommand) {
     commands.push(attackCommand);
@@ -36,7 +41,12 @@ export function consumeAttackCommandFromPrimaryClick({ world, mouseInput }) {
   return AttackCommand({ actorId: playerId });
 }
 
-function consumeFireboltCommandFromSecondaryClick({ world, mouseInput }) {
+function consumeFireboltCommandFromSecondaryClick({
+  world,
+  mouseInput,
+  mouseSnapshot,
+  screenToWorldPoint,
+}) {
   if (!mouseInput.consumeSecondaryClickIntent()) {
     return null;
   }
@@ -47,19 +57,21 @@ function consumeFireboltCommandFromSecondaryClick({ world, mouseInput }) {
     return null;
   }
 
-  const pointer = mouseInput.getSnapshot().pointer;
+  const pointer = mouseSnapshot.pointer;
 
   if (!pointer.hasPosition) {
     return null;
   }
 
+  const targetPoint = screenToWorldPoint(pointer);
+
   return CastCommand({
     actorId: playerId,
     spellId: PRIMARY_SPELL_ID,
     targetPoint: {
-      x: pointer.x,
-      y: pointer.y,
-      hasPosition: pointer.hasPosition,
+      x: targetPoint.x,
+      y: targetPoint.y,
+      hasPosition: targetPoint.hasPosition,
     },
   });
 }
