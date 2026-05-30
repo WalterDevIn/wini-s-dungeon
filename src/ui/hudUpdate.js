@@ -40,8 +40,6 @@ export function updateTacticalStatus(tacticalStatus, tacticalMode) {
     "is-paused",
     tacticalMode.mode === "tacticalPaused",
   );
-  tacticalStatus.mode.textContent = tacticalMode.mode;
-  tacticalStatus.pendingAction.textContent = tacticalMode.pendingAction;
 }
 
 function getWheelDirectionLabel(direction) {
