@@ -27,6 +27,20 @@
   box-shadow: 0 0 14px rgba(0, 255, 102, 0.26);
 }
 
+.quick-bar.is-spells-mode {
+  gap: 0.18rem;
+}
+
+.quick-bar.is-spells-mode .quick-bar-pair {
+  display: contents;
+}
+
+.quick-bar.is-spells-mode .quick-bar-pair.is-selected {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
 .quick-bar-slot {
   width: 2rem;
   height: 2rem;
