@@ -17,7 +17,7 @@ import { createTacticalModeController } from "./tacticalModeController.js";
 export function createGameApp({ canvas, context, uiRoot }) {
   const world = createWorld();
   const keyboardInput = createKeyboardInput();
-  const mouseInput = createMouseInput(canvas);
+  const mouseInput = createMouseInput(window);
   const renderer = createCanvasRenderer(canvas, context);
   const hudUi = createHudUi(uiRoot);
   const tacticalMode = createTacticalModeController();
