@@ -1,0 +1,36 @@
+.quick-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.5rem;
+}
+
+.quick-bar-pair {
+  position: relative;
+  display: flex;
+  gap: 0.18rem;
+  padding: 0.25rem;
+  border: 2px solid transparent;
+  background: transparent;
+  transition:
+    border-color 100ms ease,
+    box-shadow 100ms ease,
+    background 100ms ease;
+}
+
+.quick-bar-pair.is-selected {
+  border-color: #00ff66;
+  background: rgba(0, 255, 102, 0.08);
+  box-shadow: 0 0 14px rgba(0, 255, 102, 0.26);
+}
+
+.quick-bar-slot {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid rgba(215, 208, 189, 0.85);
+  background: rgba(0, 0, 0, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
+}
