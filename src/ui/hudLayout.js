@@ -19,6 +19,12 @@ const MOUSE_CAPS = Object.freeze([
 
 export function renderHudTemplate() {
   return `
+    <section class="tactical-status" data-tactical-status aria-label="Modo táctico">
+      <span class="tactical-status-title">Tactical</span>
+      <span class="tactical-status-mode" data-tactical-mode>running</span>
+      <span class="tactical-status-action" data-tactical-pending-action>none</span>
+    </section>
+
     <section class="wheel-feedback" data-wheel-feedback aria-label="Giro de rueda">
       <span class="wheel-feedback-label">Wheel</span>
       <span class="wheel-feedback-direction" data-wheel-direction>-</span>
@@ -47,6 +53,10 @@ export function renderHudTemplate() {
     <section class="debug-panel" aria-label="Feedback de simulación">
       <div class="debug-panel-title">Feedback</div>
       <dl class="debug-grid">
+        <dt>Modo</dt>
+        <dd data-debug-tactical-mode>running</dd>
+        <dt>Preparada</dt>
+        <dd data-debug-pending-action>none</dd>
         <dt>Click izquierdo</dt>
         <dd data-debug-left-button>No</dd>
         <dt>Rodillo</dt>
