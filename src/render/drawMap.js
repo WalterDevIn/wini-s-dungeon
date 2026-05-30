@@ -1,6 +1,8 @@
+import { worldToScreen } from "./camera.js";
+
 const FONT_FAMILY = "Georgia, 'Times New Roman', serif";
 
-export function drawMap(context, tilemap, pixelRatio) {
+export function drawMap(context, tilemap, pixelRatio, camera) {
   const tileSize = tilemap.tileSize * pixelRatio;
 
   context.textAlign = "center";
@@ -9,15 +11,20 @@ export function drawMap(context, tilemap, pixelRatio) {
 
   for (let y = 0; y < tilemap.height; y += 1) {
     for (let x = 0; x < tilemap.width; x += 1) {
-      drawTile(context, tilemap, x, y, tileSize, pixelRatio);
+      drawTile(context, tilemap, x, y, tileSize, pixelRatio, camera);
     }
   }
 }
 
-function drawTile(context, tilemap, x, y, tileSize, pixelRatio) {
+function drawTile(context, tilemap, x, y, tileSize, pixelRatio, camera) {
   const tile = tilemap.tiles[y][x];
-  const screenX = x * tileSize;
-  const screenY = y * tileSize;
+  const tileWorldPosition = {
+    x: x * tilemap.tileSize,
+    y: y * tilemap.tileSize,
+  };
+  const tileScreenPosition = worldToScreen(camera, tileWorldPosition);
+  const screenX = tileScreenPosition.x * pixelRatio;
+  const screenY = tileScreenPosition.y * pixelRatio;
   const centerX = screenX + tileSize / 2;
   const centerY = screenY + tileSize / 2;
 
