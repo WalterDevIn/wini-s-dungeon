@@ -7,7 +7,7 @@ const WINDUP_COLOR = "#00ff66";
 const RECOVERY_COLOR = "#ffcc33";
 const BASE_RING_COLOR = "rgba(244, 241, 232, 0.16)";
 const SHADOW_COLOR = "rgba(0, 0, 0, 0.75)";
-const INDICATOR_OFFSET = 8;
+const INDICATOR_VERTICAL_FACTOR = 0.58;
 const INDICATOR_RADIUS = 9;
 const INDICATOR_LINE_WIDTH = 3;
 const START_ANGLE = -Math.PI / 2;
@@ -59,7 +59,7 @@ function drawActionIndicator({
 }) {
   const centerX = (position.x + renderable.width / 2) * pixelRatio;
   const centerY =
-    (position.y + renderable.height + INDICATOR_OFFSET) * pixelRatio;
+    (position.y + renderable.height * INDICATOR_VERTICAL_FACTOR) * pixelRatio;
   const radius = INDICATOR_RADIUS * pixelRatio;
   const lineWidth = INDICATOR_LINE_WIDTH * pixelRatio;
   const endAngle = START_ANGLE + phaseProgress * Math.PI * 2;
