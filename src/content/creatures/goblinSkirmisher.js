@@ -2,10 +2,6 @@ const ENEMY_SIZE = 28;
 
 export const goblinSkirmisherDefinition = Object.freeze({
   id: "goblinSkirmisher",
-  position: {
-    x: 240,
-    y: 192,
-  },
   renderable: {
     shape: "glyph",
     glyph: "e",
