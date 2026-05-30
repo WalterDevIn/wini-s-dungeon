@@ -6,7 +6,7 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 ## Estado actual
 
-Milestone 5 parcial completado: UI mínima de feedback táctico, click izquierdo como acción primaria, primer command mínimo de ataque, coordinación de app extraída y HUD compacto de teclas antes de Milestone 5.1.
+Milestone 5 parcial completado: UI mínima de feedback táctico, click izquierdo como acción primaria, primer command mínimo de ataque, coordinación de app extraída y HUD compacto extendido de teclado/mouse antes de Milestone 5.1.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -20,7 +20,7 @@ Regla actual de ataque melee: un ataque confirmado consume la acción aunque no 
 
 El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y distancia, lo persigue en línea recta y ataca al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
 
-La UI mínima muestra un HUD compacto de teclas en la esquina inferior derecha con `W`, `A`, `S`, `D`, `Q`, `F`, `Space` y `LMB`, además de una pequeña ventana de feedback con estado de input, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
+La UI mínima muestra un HUD compacto extendido en la esquina inferior derecha con bloque de teclado (`W`, `A`, `R`, `S`, `Q`, `F`, `Tab`, `Space`) y bloque de mouse (`LMB`, `RMB`, `MMB`, `M4`, `M5`), además de una pequeña ventana de feedback con estado de input, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`.
 
@@ -91,15 +91,16 @@ Ninguno.
 ## Input existente
 
 - Input de teclado mínimo para movimiento con WASD y flechas.
-- Input de teclado expone snapshot visual de `W`, `A`, `S`, `D`, `Q`, `F` y `Space`.
+- Input de teclado expone snapshot visual semántico de movimiento (`moveUp`, `moveLeft`, `moveRight`, `moveDown`) y snapshot visual de `Q`, `F`, `Tab` y `Space`.
 - Input de mouse para acción primaria con click izquierdo.
+- Input de mouse expone snapshot visual de `LMB`, `RMB`, `MMB`, `M4` y `M5`.
 - Input produce movement intent y primary click intent.
 - Input no modifica ECS ni componentes.
 - Input no aplica daño.
 
 ## UI existente
 
-- `hudUi`: muestra HUD compacto de teclas presionadas y una ventana mínima de feedback.
+- `hudUi`: muestra HUD compacto extendido de teclado/mouse y una ventana mínima de feedback.
 - `buildUiSnapshot`: construye un snapshot simple para UI con input, último command y estado de acción del jugador.
 - La UI no modifica ECS ni llama sistemas de simulation.
 
@@ -215,6 +216,10 @@ Crear:
 
 ## Decisiones recientes
 
+- El HUD compacto ahora muestra bloque de teclado y bloque de mouse separados.
+- El HUD de movimiento muestra labels `W`, `A`, `R`, `S` mediante estados semánticos de movimiento.
+- `keyboardInput` usa `event.key` normalizado para feedback visual de `Q` y `F`.
+- `mouseInput` expone snapshot visual de `LMB`, `RMB`, `MMB`, `M4` y `M5`; solo `LMB` genera `AttackCommand` indirectamente.
 - El HUD de acción primaria circular fue reemplazado por un HUD compacto de teclas presionadas en esquina inferior derecha.
 - `keyboardInput` expone snapshot visual de teclas relevantes sin asignarles acciones nuevas.
 - Antes de Milestone 5.1, `main.js` fue reducido a bootstrap.
