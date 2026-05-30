@@ -4,8 +4,8 @@ import { createCreature } from "../domain/factories/createCreature.js";
 export function createPlayer(world) {
   return createCreature(world, getCreatureDefinition("humanAdventurer"), {
     position: {
-      x: 480,
-      y: 624,
+      x: 1056,
+      y: 1152,
     },
   });
 }
