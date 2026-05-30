@@ -20,7 +20,7 @@ Regla actual de ataque melee: un ataque confirmado consume la acción aunque no 
 
 El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y distancia, lo persigue en línea recta y ataca al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
 
-La UI mínima muestra un HUD compacto extendido en la esquina inferior derecha con bloque de teclado (`W`, `A`, `R`, `S`, `Q`, `F`, `Tab`, `Space`) y bloque de mouse (`LMB`, `RMB`, `MMB`, `M4`, `M5`), además de una pequeña ventana de feedback con estado de input, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
+La UI mínima muestra un HUD compacto extendido en la esquina inferior derecha con bloque de teclado (`W`, `A`, `R`, `S`, `Q`, `F`, `Tab`, `Space`) y bloque de mouse (`LMB`, `RMB`, `Wheel`, `M4`, `M5`). Además muestra un indicador inferior izquierdo de giro de rueda y una pequeña ventana de feedback con estado de input, índice actual del rodillo, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`.
 
@@ -91,16 +91,16 @@ Ninguno.
 ## Input existente
 
 - Input de teclado mínimo para movimiento con WASD y flechas.
-- Input de teclado expone snapshot visual semántico de movimiento (`moveUp`, `moveLeft`, `moveRight`, `moveDown`) y snapshot visual de `Q`, `F`, `Tab` y `Space`.
+- Input de teclado expone snapshot visual por letra de movimiento (`W`, `A`, `R`, `S`) y snapshot visual de `Q`, `F`, `Tab` y `Space`.
 - Input de mouse para acción primaria con click izquierdo.
-- Input de mouse expone snapshot visual de `LMB`, `RMB`, `MMB`, `M4` y `M5`.
+- Input de mouse expone snapshot visual de `LMB`, `RMB`, `M4`, `M5`, dirección/pulso de rueda e índice circular de rueda `0..9`.
 - Input produce movement intent y primary click intent.
 - Input no modifica ECS ni componentes.
 - Input no aplica daño.
 
 ## UI existente
 
-- `hudUi`: muestra HUD compacto extendido de teclado/mouse y una ventana mínima de feedback.
+- `hudUi`: muestra HUD compacto extendido de teclado/mouse, indicador inferior izquierdo de giro de rueda y una ventana mínima de feedback.
 - `buildUiSnapshot`: construye un snapshot simple para UI con input, último command y estado de acción del jugador.
 - La UI no modifica ECS ni llama sistemas de simulation.
 
@@ -216,10 +216,13 @@ Crear:
 
 ## Decisiones recientes
 
-- El HUD compacto ahora muestra bloque de teclado y bloque de mouse separados.
-- El HUD de movimiento muestra labels `W`, `A`, `R`, `S` mediante estados semánticos de movimiento.
-- `keyboardInput` usa `event.key` normalizado para feedback visual de `Q` y `F`.
-- `mouseInput` expone snapshot visual de `LMB`, `RMB`, `MMB`, `M4` y `M5`; solo `LMB` genera `AttackCommand` indirectamente.
+- Se corrigió el HUD de `R`/`S` para usar letras visuales normalizadas en lugar de posiciones físicas.
+- El botón medio dejó de representar el rodillo en el HUD; el rodillo ahora usa eventos `wheel` reales.
+- El rodillo mantiene un índice circular `0..9`: `deltaY < 0` incrementa y `deltaY > 0` decrementa, con wrap entre `0` y `9`.
+- El HUD compacto muestra bloque de teclado y bloque de mouse separados.
+- El HUD de movimiento muestra labels `W`, `A`, `R`, `S` mediante estados visuales de tecla/letra.
+- `keyboardInput` usa `event.key` normalizado para feedback visual de `W`, `A`, `R`, `S`, `Q` y `F`.
+- `mouseInput` expone snapshot visual de `LMB`, `RMB`, `M4`, `M5`, dirección/pulso de rueda e índice de rueda; solo `LMB` genera `AttackCommand` indirectamente.
 - El HUD de acción primaria circular fue reemplazado por un HUD compacto de teclas presionadas en esquina inferior derecha.
 - `keyboardInput` expone snapshot visual de teclas relevantes sin asignarles acciones nuevas.
 - Antes de Milestone 5.1, `main.js` fue reducido a bootstrap.
