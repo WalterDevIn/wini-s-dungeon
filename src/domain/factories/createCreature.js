@@ -17,10 +17,10 @@ import {
   Velocity,
 } from "../components.js";
 
-export function createCreature(world, definition) {
+export function createCreature(world, definition, spawnData) {
   const creature = createEntity(world);
   const components = [
-    [ComponentType.Position, Position(definition.position.x, definition.position.y)],
+    [ComponentType.Position, Position(spawnData.position.x, spawnData.position.y)],
     [ComponentType.Velocity, Velocity()],
     [ComponentType.Renderable, Renderable(definition.renderable)],
     [ComponentType.Collider, Collider(definition.collider)],
