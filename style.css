@@ -46,19 +46,50 @@ body {
   font-family: Georgia, "Times New Roman", serif;
 }
 
-.key-hud {
+.input-hud {
   position: absolute;
   right: 1.25rem;
   bottom: 1.25rem;
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
-  gap: 0.35rem;
-  max-width: min(28rem, calc(100vw - 2.5rem));
+  gap: 1rem;
+  max-width: min(38rem, calc(100vw - 2.5rem));
   padding: 0.45rem;
   border: 2px solid rgba(244, 241, 232, 0.62);
   background: rgba(0, 0, 0, 0.68);
   box-shadow: 0 0 0 1px #000, 0 0 18px rgba(244, 241, 232, 0.08);
+}
+
+.keyboard-hud,
+.mouse-hud {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.keyboard-hud {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.movement-key-block {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.movement-key-row {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.movement-key-row-top {
+  padding-left: 1.55rem;
+}
+
+.action-key-row {
+  display: flex;
+  gap: 0.35rem;
 }
 
 .key-cap {
@@ -82,7 +113,11 @@ body {
     box-shadow 100ms ease;
 }
 
-.key-cap-wide {
+.key-cap-tab {
+  min-width: 3.6rem;
+}
+
+.key-cap-space {
   min-width: 5.4rem;
 }
 
