@@ -8,7 +8,11 @@ import { tilemap } from "../world/tilemap.js";
 import { runSimulationStep } from "../simulation/runSimulationStep.js";
 import { createCanvasRenderer } from "../render/canvasRenderer.js";
 import { createHudUi } from "../ui/hudUi.js";
-import { collectCommandsFromInput } from "./commandMapper.js";
+import {
+  collectCommandsFromInput,
+  consumeAttackCommandFromPrimaryClick,
+} from "./commandMapper.js";
+import { createTacticalModeController } from "./tacticalModeController.js";
 
 export function createGameApp({ canvas, context, uiRoot }) {
   const world = createWorld();
@@ -16,6 +20,7 @@ export function createGameApp({ canvas, context, uiRoot }) {
   const mouseInput = createMouseInput(canvas);
   const renderer = createCanvasRenderer(canvas, context);
   const hudUi = createHudUi(uiRoot);
+  const tacticalMode = createTacticalModeController();
 
   createPlayer(world);
   createEnemy(world);
@@ -31,19 +36,35 @@ export function createGameApp({ canvas, context, uiRoot }) {
     const deltaSeconds = Math.min((currentTime - lastFrameTime) / 1000, 0.05);
     lastFrameTime = currentTime;
 
-    const commandResult = collectCommandsFromInput({ world, mouseInput });
-
-    if (commandResult.lastCommand) {
-      lastCommand = commandResult.lastCommand;
+    if (keyboardInput.consumeTacticalToggleIntent()) {
+      tacticalMode.toggle();
     }
 
-    runSimulationStep({
-      world,
-      tilemap,
-      deltaSeconds,
-      movementIntent: keyboardInput.getMovementIntent(),
-      commands: commandResult.commands,
-    });
+    const commands = tacticalMode.consumeCommandsToRun();
+
+    if (tacticalMode.isPaused()) {
+      const preparedCommand = consumeAttackCommandFromPrimaryClick({ world, mouseInput });
+
+      if (preparedCommand) {
+        tacticalMode.prepareCommand(preparedCommand);
+        lastCommand = preparedCommand;
+      }
+    } else {
+      const commandResult = collectCommandsFromInput({ world, mouseInput });
+      commands.push(...commandResult.commands);
+
+      if (commandResult.lastCommand) {
+        lastCommand = commandResult.lastCommand;
+      }
+
+      runSimulationStep({
+        world,
+        tilemap,
+        deltaSeconds,
+        movementIntent: keyboardInput.getMovementIntent(),
+        commands,
+      });
+    }
 
     renderer.render(world, tilemap);
     hudUi.update(
@@ -51,6 +72,7 @@ export function createGameApp({ canvas, context, uiRoot }) {
         world,
         keyboardSnapshot: keyboardInput.getSnapshot(),
         mouseSnapshot: mouseInput.getSnapshot(),
+        tacticalModeSnapshot: tacticalMode.getSnapshot(),
         lastCommand,
       }),
     );
