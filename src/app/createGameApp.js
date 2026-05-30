@@ -1,4 +1,4 @@
-import { getComponent } from "../ecs/world.js";
+import { createWorld, getComponent } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
 import { createDemoEncounter } from "../game/createDemoEncounter.js";
 import { createPlayer } from "../game/createPlayer.js";
