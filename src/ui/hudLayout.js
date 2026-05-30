@@ -85,7 +85,7 @@ export function renderHudTemplate() {
 function renderQuickBarPairs() {
   return Array.from({ length: QUICK_BAR_PAIR_COUNT }, (_, pairIndex) => {
     const slots = Array.from({ length: QUICK_BAR_SLOTS_PER_PAIR }, (_, slotIndex) => {
-      const slotNumber = pairIndex * QUICK_BAR_SLOTS_PER_PAIR + slotIndex + 1;
+      const slotNumber = pairIndex * QUICK_BAR_SLOTS_PER_PAIR + slotIndex;
       return `<div class="quick-bar-slot" data-quick-bar-slot="${slotNumber}"></div>`;
     }).join("");
 
