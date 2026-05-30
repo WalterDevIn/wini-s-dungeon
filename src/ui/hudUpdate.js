@@ -24,8 +24,12 @@ export function updateMouseCaps(mouseCaps, mouseInput) {
   }
 }
 
-export function updateQuickBar(quickBarPairs, mouseInput) {
+export function updateQuickBar(quickBar, quickBarPairs, mouseInput, quickBarView) {
+  const isSpellsMode = quickBarView.mode === "spells";
   const selectedPairIndex = Math.floor(mouseInput.wheelIndex / 2);
+
+  quickBar.classList.toggle("is-inventory-mode", !isSpellsMode);
+  quickBar.classList.toggle("is-spells-mode", isSpellsMode);
 
   quickBarPairs.forEach((pairElement, pairIndex) => {
     pairElement.classList.toggle("is-selected", pairIndex === selectedPairIndex);
