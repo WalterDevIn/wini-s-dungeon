@@ -36,6 +36,8 @@ Se aplicó un refactor de input post-Milestone 5.1: `keyboardInput` quedó como 
 
 Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador DOM, `hudLayout` contiene template/configuración del HUD, y `hudUpdate` contiene helpers de actualización visual, incluyendo cursor custom, anillo radial de acción y hotbar visual mínima.
 
+Se aplicó un refactor CSS: `style.css` quedó como entrypoint con `@import`, y los estilos de UI se dividieron por responsabilidad en `src/ui/styles/`.
+
 Todavía no hay conjuros, menú táctico con botones de acción, inventario real, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
@@ -101,6 +103,17 @@ Ninguno.
 - `buildUiSnapshot`: construye un snapshot simple para UI con input, estado táctico, último command, estado de acción del jugador, duración de fase y progreso de fase.
 - La UI no modifica ECS ni llama sistemas de simulation.
 
+## CSS existente
+
+- `style.css`: entrypoint de estilos con imports modulares.
+- `src/ui/styles/base.css`: base global, fuente, colores raíz y cursor nativo oculto.
+- `src/ui/styles/canvas.css`: canvas fullscreen y raíz de UI.
+- `src/ui/styles/cursor.css`: cursor custom y anillo radial de acción.
+- `src/ui/styles/tacticalStatus.css`: etiqueta visual de pausa táctica.
+- `src/ui/styles/quickBar.css`: hotbar visual mínima.
+- `src/ui/styles/inputHud.css`: HUD de teclado, mouse, rueda y key caps.
+- `src/ui/styles/debugPanel.css`: panel de debug.
+
 ## App helpers existentes
 
 - `createGameApp`: coordina creación de mundo, input, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico y snapshot UI.
@@ -147,6 +160,13 @@ Ninguno.
 - `src/ui/hudUi.js`
 - `src/ui/hudLayout.js`
 - `src/ui/hudUpdate.js`
+- `src/ui/styles/base.css`
+- `src/ui/styles/canvas.css`
+- `src/ui/styles/cursor.css`
+- `src/ui/styles/tacticalStatus.css`
+- `src/ui/styles/quickBar.css`
+- `src/ui/styles/inputHud.css`
+- `src/ui/styles/debugPanel.css`
 - `src/render/canvasRenderer.js`
 - `src/render/drawMap.js`
 - `src/render/drawEntities.js`
@@ -165,7 +185,6 @@ Milestone 5.2: decidir si se agrega selección real de hotbar por números `1-5`
 - No existe command buffer; solo hay command mínimo directo por frame y un command táctico pendiente máximo en app/session.
 - No existe event bus ni events.
 - `createGameApp` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación.
-- `style.css` supera 100 líneas y concentra estilos base, canvas, HUD, cursor, hotbar, wheel feedback, key caps, estado táctico y debug panel; conviene dividirlo en un scope futuro cuando exista estrategia clara de CSS.
 - La hotbar visual deriva selección desde `wheelIndex`; es una solución provisional de UI, no una fuente de verdad de inventario.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
@@ -173,6 +192,8 @@ Milestone 5.2: decidir si se agrega selección real de hotbar por números `1-5`
 
 ## Decisiones recientes
 
+- `style.css` fue dividido en módulos CSS por responsabilidad y quedó como entrypoint con `@import`.
+- Se crearon módulos CSS en `src/ui/styles/`: `base.css`, `canvas.css`, `cursor.css`, `tacticalStatus.css`, `quickBar.css`, `inputHud.css` y `debugPanel.css`.
 - Se simplificó la hotbar visual eliminando borde global, números sobre pares y borde visible de pares no seleccionados.
 - El par seleccionado conserva borde/feedback visual.
 - Se agregó hotbar visual mínima de inventario rápido: 10 slots vacíos agrupados de a 2 en 5 pares.
