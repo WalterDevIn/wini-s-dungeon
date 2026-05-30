@@ -60,7 +60,7 @@ body {
   display: none;
   place-items: center;
   pointer-events: none;
-  transform: translate(-100px, -100px);
+  transform: translate(-50%, -50%);
 }
 
 .cursor-feedback.has-position {
