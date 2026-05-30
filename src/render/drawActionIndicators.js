@@ -1,5 +1,6 @@
 import { getComponent, queryEntities } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
+import { worldToScreen } from "./camera.js";
 
 const WINDUP_PHASE = "windup";
 const RECOVERY_PHASE = "recovery";
@@ -12,7 +13,7 @@ const INDICATOR_RADIUS = 9;
 const INDICATOR_LINE_WIDTH = 3;
 const START_ANGLE = -Math.PI / 2;
 
-export function drawActionIndicators(context, world, pixelRatio) {
+export function drawActionIndicators(context, world, pixelRatio, camera) {
   const actionEntities = queryEntities(world, [
     ComponentType.Position,
     ComponentType.Renderable,
@@ -41,6 +42,7 @@ export function drawActionIndicators(context, world, pixelRatio) {
       phase: actionEconomy.phase,
       phaseProgress,
       pixelRatio,
+      camera,
     });
   }
 }
@@ -56,10 +58,15 @@ function drawActionIndicator({
   phase,
   phaseProgress,
   pixelRatio,
+  camera,
 }) {
-  const centerX = (position.x + renderable.width / 2) * pixelRatio;
-  const centerY =
-    (position.y + renderable.height * INDICATOR_VERTICAL_FACTOR) * pixelRatio;
+  const worldCenter = {
+    x: position.x + renderable.width / 2,
+    y: position.y + renderable.height * INDICATOR_VERTICAL_FACTOR,
+  };
+  const screenCenter = worldToScreen(camera, worldCenter);
+  const centerX = screenCenter.x * pixelRatio;
+  const centerY = screenCenter.y * pixelRatio;
   const radius = INDICATOR_RADIUS * pixelRatio;
   const lineWidth = INDICATOR_LINE_WIDTH * pixelRatio;
   const endAngle = START_ANGLE + phaseProgress * Math.PI * 2;
