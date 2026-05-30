@@ -24,7 +24,7 @@ El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y
 
 La UI mínima muestra feedback de input dividido en dos hemisferios inferiores: teclado en esquina inferior izquierda y mouse/rueda en esquina inferior derecha. El mouse usa una grilla 3x3 con `LMB`, `RMB`, `M5`, `Wheel` y `M4`; `LMB` y `RMB` tienen tamaño visual amplio, mientras `M4` y `M5` quedan compactos. El indicador externo de rueda con número/dirección queda oculto temporalmente; el botón `Wheel` integrado en la grilla sigue visible y el debug panel sigue mostrando el índice de rueda. El teclado muestra `Tab`, `Q`, `W`, `F`, `A`, `R`, `S` y `Space`. La etiqueta superior `Pausa` solo aparece durante `tacticalPaused`. El debug panel sigue mostrando modo, acción preparada, índice de rueda, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
-La UI tiene una hotbar visual mínima centrada abajo con dos modos visuales: `inventory` y `spells`. El modo inicial es `inventory`: muestra 10 slots vacíos agrupados de a 2 en 5 pares. Al presionar `Q`, la UI alterna visualmente a modo `spells`: muestra los mismos 10 slots vacíos como slots individuales. Al presionar `Q` otra vez, vuelve a `inventory`. La selección actual es provisional y puramente visual: se deriva de `snapshot.input.mouse.wheelIndex` mediante pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`. No existe inventario real, items, conjuros reales, `CastCommand`, spell registry, uso de objetos ni selección por números todavía.
+La UI tiene una hotbar visual mínima centrada abajo con tres modos visuales: `inventory`, `spells` y `features`. El modo inicial es `inventory`: muestra 10 slots vacíos agrupados de a 2 en 5 pares y la selección visual deriva de `snapshot.input.mouse.wheelIndex` mediante pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`. Al presionar `Q`, la UI alterna visualmente entre `inventory` y `spells`; al presionar `F`, alterna visualmente entre `inventory` y `features`. Los modos `spells` y `features` muestran los 10 slots vacíos como slots individuales y seleccionan el slot individual `0..9` derivado de `mouse.wheelIndex`. El feedback de selección ahora es crecimiento rápido del par o slot seleccionado, no un marco como señal principal. No existe inventario real, items, conjuros reales, feats/features reales, `CastCommand`, `UseFeatureCommand`, spell registry, uso de objetos ni selección por números todavía.
 
 El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy` y `AttackProfile`; esto no modifica daño, tiempos ni reglas de combate. El cursor custom se posiciona con `left/top` desde JS y mantiene el centrado con CSS.
 
@@ -38,7 +38,7 @@ Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador
 
 Se aplicó un refactor CSS: `style.css` quedó como entrypoint con `@import`, y los estilos de UI se dividieron por responsabilidad en `src/ui/styles/`.
 
-Todavía no hay conjuros reales, Firebolt, `CastCommand`, proyectiles, menú táctico con botones de acción, inventario real, cámara compleja, assets externos, guardado, multiplayer ni servidor.
+Todavía no hay conjuros reales, Firebolt, `CastCommand`, proyectiles, feats/features reales, `UseFeatureCommand`, menú táctico con botones de acción, inventario real, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
 
@@ -100,7 +100,7 @@ Ninguno.
 - `hudUi`: orquesta nodos DOM del HUD y delega layout/update en módulos específicos.
 - `hudLayout`: contiene template/configuración del HUD de teclado, mouse, rueda, pausa, cursor custom, hotbar visual y debug panel.
 - `hudUpdate`: contiene helpers para actualizar key caps, mouse caps, feedback de rueda, estado táctico, cursor custom, anillo radial de acción y hotbar visual.
-- `quickBarViewState`: contiene estado visual de UI para alternar hotbar `inventory/spells` con `Q` por flanco de presión.
+- `quickBarViewState`: contiene estado visual de UI para alternar hotbar entre `inventory`, `spells` y `features` con `Q`/`F` por flanco de presión.
 - `buildUiSnapshot`: construye un snapshot simple para UI con input, estado táctico, último command, estado de acción del jugador, duración de fase y progreso de fase.
 - La UI no modifica ECS ni llama sistemas de simulation.
 
@@ -111,7 +111,7 @@ Ninguno.
 - `src/ui/styles/canvas.css`: canvas fullscreen y raíz de UI.
 - `src/ui/styles/cursor.css`: cursor custom y anillo radial de acción.
 - `src/ui/styles/tacticalStatus.css`: etiqueta visual de pausa táctica.
-- `src/ui/styles/quickBar.css`: hotbar visual mínima y modo visual de conjuros.
+- `src/ui/styles/quickBar.css`: hotbar visual mínima, modos visuales `inventory`/`spells`/`features` y feedback de selección por crecimiento.
 - `src/ui/styles/inputHud.css`: HUD de teclado, mouse, rueda y key caps.
 - `src/ui/styles/debugPanel.css`: panel de debug.
 
@@ -187,24 +187,31 @@ Milestone 6: iniciar Firebolt/proyectiles solo después de definir scope pequeñ
 - No existe command buffer; solo hay command mínimo directo por frame y un command táctico pendiente máximo en app/session.
 - No existe event bus ni events.
 - `createGameApp` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación.
-- La hotbar visual deriva selección desde `wheelIndex`; es una solución provisional de UI, no una fuente de verdad de inventario ni de spellcasting.
+- La hotbar visual deriva selección desde `wheelIndex`; es una solución provisional de UI, no una fuente de verdad de inventario, spellcasting ni features activables.
 - El modo visual `spells` no representa conjuros reales, spell slots, prepared spells ni capacidad de lanzar conjuros.
+- El modo visual `features` no representa feats/features reales, recursos, cooldowns ni capacidad de activar habilidades.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
 - Pedir a la IA implementaciones grandes sin scope.
 
 ## Decisiones recientes
 
-- Se agregó modo visual de conjuros a la hotbar: `Q` alterna `inventory/spells` dentro de UI.
+- Se agregó modo visual `features` a la hotbar: `F` alterna entre `features` e `inventory` dentro de UI.
+- La hotbar visual ahora tiene tres modos: `inventory`, `spells` y `features`.
+- `Q` alterna entre `spells` e `inventory`; si la hotbar está en `features`, `Q` cambia a `spells`.
+- `F` alterna entre `features` e `inventory`; si la hotbar está en `spells`, `F` cambia a `features`.
+- La secuencia `Q`, luego `F`, luego `F` devuelve la hotbar a `inventory`.
 - El modo `inventory` conserva 10 slots vacíos agrupados de a 2 en 5 pares.
-- El modo `spells` muestra 10 slots individuales vacíos.
-- `Q` no lanza conjuros, no crea commands y no inicia Milestone 6.
-- No existe `CastCommand`, spell registry, prepared spells reales ni Firebolt todavía.
+- Los modos `spells` y `features` muestran 10 slots individuales vacíos.
+- En `inventory`, la selección visual deriva de `mouse.wheelIndex` por pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`.
+- En `spells` y `features`, la selección visual deriva de `mouse.wheelIndex` como slot individual `0..9`.
+- El feedback de selección de hotbar pasó de marco/borde principal a crecimiento rápido mediante CSS `transform: scale(...)`.
+- `Q` y `F` no lanzan conjuros, no activan features, no crean commands y no inician Milestone 6.
+- No existe `CastCommand`, `UseFeatureCommand`, spell registry, prepared spells reales, feats/features reales ni Firebolt todavía.
 - `quickBarViewState.js` contiene el estado visual de hotbar y vive en UI, no en app ni simulation.
 - `style.css` fue dividido en módulos CSS por responsabilidad y quedó como entrypoint con `@import`.
 - Se crearon módulos CSS en `src/ui/styles/`: `base.css`, `canvas.css`, `cursor.css`, `tacticalStatus.css`, `quickBar.css`, `inputHud.css` y `debugPanel.css`.
 - Se simplificó la hotbar visual eliminando borde global, números sobre pares y borde visible de pares no seleccionados.
-- El par seleccionado conserva borde/feedback visual.
 - Se agregó hotbar visual mínima de inventario rápido: 10 slots vacíos agrupados de a 2 en 5 pares.
 - La selección de hotbar es provisional y visual: se deriva de `mouse.wheelIndex` sin crear inventario real ni controller app-level.
 - No se implementó selección por números `1-5`; queda para un scope posterior.
