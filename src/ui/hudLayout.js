@@ -17,6 +17,9 @@ const MOUSE_CAPS = Object.freeze([
   { code: "button4Pressed", label: "M4", className: "mouse-cap-m4" },
 ]);
 
+const QUICK_BAR_PAIR_COUNT = 5;
+const QUICK_BAR_SLOTS_PER_PAIR = 2;
+
 export function renderHudTemplate() {
   return `
     <div class="cursor-feedback" data-cursor-feedback aria-hidden="true">
@@ -26,6 +29,10 @@ export function renderHudTemplate() {
 
     <section class="tactical-status" data-tactical-status aria-label="Modo táctico">
       <span class="tactical-status-title">Pausa</span>
+    </section>
+
+    <section class="quick-bar" aria-label="Inventario rápido visual">
+      ${renderQuickBarPairs()}
     </section>
 
     <section class="keyboard-input-hud" aria-label="Teclado">
@@ -73,6 +80,22 @@ export function renderHudTemplate() {
       </dl>
     </section>
   `;
+}
+
+function renderQuickBarPairs() {
+  return Array.from({ length: QUICK_BAR_PAIR_COUNT }, (_, pairIndex) => {
+    const slots = Array.from({ length: QUICK_BAR_SLOTS_PER_PAIR }, (_, slotIndex) => {
+      const slotNumber = pairIndex * QUICK_BAR_SLOTS_PER_PAIR + slotIndex + 1;
+      return `<div class="quick-bar-slot" data-quick-bar-slot="${slotNumber}"></div>`;
+    }).join("");
+
+    return `
+      <div class="quick-bar-pair" data-quick-bar-pair="${pairIndex}">
+        <span class="quick-bar-pair-label">${pairIndex + 1}</span>
+        ${slots}
+      </div>
+    `;
+  }).join("");
 }
 
 function renderKeyCap({ code, label, size = "normal" }) {
