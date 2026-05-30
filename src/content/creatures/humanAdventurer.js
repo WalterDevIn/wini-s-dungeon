@@ -2,10 +2,6 @@ const PLAYER_SIZE = 28;
 
 export const humanAdventurerDefinition = Object.freeze({
   id: "humanAdventurer",
-  position: {
-    x: 96,
-    y: 96,
-  },
   renderable: {
     shape: "glyph",
     glyph: "@",
