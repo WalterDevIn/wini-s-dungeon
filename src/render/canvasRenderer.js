@@ -21,17 +21,29 @@ export function createCanvasRenderer(canvas, context) {
     context.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  function render(world, tilemap) {
+  function getViewport() {
+    const pixelRatio = window.devicePixelRatio || 1;
+
+    resizeCanvas();
+
+    return {
+      width: canvas.width / pixelRatio,
+      height: canvas.height / pixelRatio,
+    };
+  }
+
+  function render(world, tilemap, camera) {
     const pixelRatio = window.devicePixelRatio || 1;
 
     resizeCanvas();
     clearFrame();
-    drawMap(context, tilemap, pixelRatio);
-    drawEntities(context, world, pixelRatio);
-    drawActionIndicators(context, world, pixelRatio);
+    drawMap(context, tilemap, pixelRatio, camera);
+    drawEntities(context, world, pixelRatio, camera);
+    drawActionIndicators(context, world, pixelRatio, camera);
   }
 
   return {
+    getViewport,
     render,
   };
 }
