@@ -34,8 +34,7 @@ function getPlayerActionState(world, playerId) {
     return createIdleActionState("ready");
   }
 
-  const attackProfile = getComponent(world, playerId, ComponentType.AttackProfile);
-  const phaseDuration = getActionPhaseDuration(actionEconomy, attackProfile);
+  const phaseDuration = actionEconomy.phaseDuration;
   const phaseProgress = getActionPhaseProgress(actionEconomy.timeRemaining, phaseDuration);
 
   return {
@@ -57,18 +56,6 @@ function createIdleActionState(status) {
     phaseDuration: 0,
     phaseProgress: 0,
   };
-}
-
-function getActionPhaseDuration(actionEconomy, attackProfile) {
-  if (actionEconomy.phase === "windup") {
-    return attackProfile?.windupSeconds ?? 0;
-  }
-
-  if (actionEconomy.phase === "recovery") {
-    return actionEconomy.pendingAttack?.recoverySeconds ?? attackProfile?.recoverySeconds ?? 0;
-  }
-
-  return 0;
 }
 
 function getActionPhaseProgress(timeRemaining, phaseDuration) {
