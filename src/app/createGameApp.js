@@ -1,7 +1,6 @@
 import { createWorld } from "../ecs/world.js";
 import { createEnemy } from "../game/createEnemy.js";
 import { createPlayer } from "../game/createPlayer.js";
-import { createTestProjectile } from "../game/createTestProjectile.js";
 import { buildUiSnapshot } from "../game/buildUiSnapshot.js";
 import { createKeyboardInput } from "../input/keyboardInput.js";
 import { createMouseInput } from "../input/mouseInput.js";
@@ -25,7 +24,6 @@ export function createGameApp({ canvas, context, uiRoot }) {
 
   createPlayer(world);
   createEnemy(world);
-  createTestProjectile(world);
 
   let lastFrameTime = performance.now();
   let lastCommand = null;
