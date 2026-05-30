@@ -8,8 +8,12 @@ export function createMouseInput(target) {
   let wheelIndex = 0;
   let wheelDirection = WHEEL_IDLE_DIRECTION;
   let wheelPulse = false;
+  let pointerX = 0;
+  let pointerY = 0;
+  let hasPointerPosition = false;
 
   function handleMouseDown(event) {
+    updatePointerPosition(event);
     pressedButtons.add(event.button);
 
     if (event.button === 0) {
@@ -20,11 +24,18 @@ export function createMouseInput(target) {
   }
 
   function handleMouseUp(event) {
+    updatePointerPosition(event);
     pressedButtons.delete(event.button);
     event.preventDefault();
   }
 
+  function handleMouseMove(event) {
+    updatePointerPosition(event);
+  }
+
   function handleWheel(event) {
+    updatePointerPosition(event);
+
     if (event.deltaY < 0) {
       wheelIndex = incrementWheelIndex(wheelIndex);
       wheelDirection = "up";
@@ -47,6 +58,7 @@ export function createMouseInput(target) {
 
   target.addEventListener("mousedown", handleMouseDown);
   target.addEventListener("mouseup", handleMouseUp);
+  target.addEventListener("mousemove", handleMouseMove);
   target.addEventListener("wheel", handleWheel, { passive: false });
   target.addEventListener("contextmenu", handleContextMenu);
 
@@ -65,6 +77,11 @@ export function createMouseInput(target) {
       wheelIndex,
       wheelDirection,
       wheelPulse,
+      pointer: {
+        x: pointerX,
+        y: pointerY,
+        hasPosition: hasPointerPosition,
+      },
     };
 
     wheelPulse = false;
@@ -77,6 +94,12 @@ export function createMouseInput(target) {
     consumePrimaryClickIntent,
     getSnapshot,
   };
+}
+
+function updatePointerPosition(event) {
+  pointerX = event.clientX;
+  pointerY = event.clientY;
+  hasPointerPosition = true;
 }
 
 function incrementWheelIndex(currentIndex) {
