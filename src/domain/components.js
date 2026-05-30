@@ -70,8 +70,9 @@ export function ActionEconomy({
   phase = null,
   timeRemaining = 0,
   pendingAttack = null,
+  pendingSpell = null,
 } = {}) {
-  return { currentAction, phase, timeRemaining, pendingAttack };
+  return { currentAction, phase, timeRemaining, pendingAttack, pendingSpell };
 }
 
 export function AttackProfile({ damage, range, windupSeconds, recoverySeconds }) {
