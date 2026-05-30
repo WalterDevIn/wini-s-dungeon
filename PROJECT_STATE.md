@@ -8,13 +8,15 @@ Debe actualizarse al terminar cada milestone o feature importante.
 
 Milestone 5.1 completado: modo táctico pausado mínimo con `Space`, preparación de golpe con `LMB` durante pausa y ejecución del `AttackCommand` preparado al despausar.
 
-Se inició Milestone 6 con una foundation mínima de proyectiles genéricos ECS. Todavía no está implementado Firebolt ni `CastCommand`.
+Milestone 6 está iniciado: ya existe foundation mínima de proyectiles genéricos ECS y Firebolt mínimo mediante `CastCommand` con botón derecho del mouse. Todavía no hay spell slots, recursos, cooldowns, prepared spells, hotbar conectada a casteo ni menú táctico de conjuros.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
 
 El jugador ataca con click izquierdo mediante un `AttackCommand` mínimo. En modo running, el click izquierdo genera un command inmediato. En modo táctico pausado, el click izquierdo prepara un `AttackCommand` pendiente que se entrega a la simulación al volver a running.
+
+El botón derecho del mouse genera un `CastCommand` mínimo para `firebolt` solo en modo running. `commandMapper` toma la posición actual del puntero y la guarda como `targetPoint`; input no crea proyectiles y app no crea proyectiles.
 
 La pausa táctica vive en app/session, no en ECS ni simulation. Mientras el modo táctico está pausado, `runSimulationStep` no se llama; render y HUD siguen actualizándose.
 
@@ -26,29 +28,32 @@ El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y
 
 Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`. `projectileMovementSystem` mueve proyectiles y los destruye contra tiles sólidos. `projectileImpactSystem` detecta impacto contra criaturas enemigas, filtra por facción y `DefenseProfile.canBeHit`, aplica daño mitigado con `damageRules` y remueve el proyectil si corresponde. `lifetimeSystem` remueve cualquier entidad con `Lifetime` vencido. Existe un proyectil de prueba temporal creado en `createGameApp` mediante `createTestProjectile` para verificar la infraestructura al iniciar el juego.
 
+Firebolt está definido de forma mínima y data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. `spellCastSystem` procesa commands de tipo `Cast`, obtiene la definición desde el registry y delega la creación del proyectil en `spellProjectileFactory`. Firebolt nace desde el centro del actor, viaja hacia el `targetPoint` del command, usa `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`, y luego queda bajo los sistemas genéricos de proyectiles.
+
 La UI mínima muestra feedback de input dividido en dos hemisferios inferiores: teclado en esquina inferior izquierda y mouse/rueda en esquina inferior derecha. El mouse usa una grilla 3x3 con `LMB`, `RMB`, `M5`, `Wheel` y `M4`; `LMB` y `RMB` tienen tamaño visual amplio, mientras `M4` y `M5` quedan compactos. El indicador externo de rueda con número/dirección queda oculto temporalmente; el botón `Wheel` integrado en la grilla sigue visible y el debug panel sigue mostrando el índice de rueda. El teclado muestra `Tab`, `Q`, `W`, `F`, `A`, `R`, `S` y `Space`. La etiqueta superior `Pausa` solo aparece durante `tacticalPaused`. El debug panel sigue mostrando modo, acción preparada, índice de rueda, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
-La UI tiene una hotbar visual mínima centrada abajo con tres modos visuales: `inventory`, `spells` y `features`. El modo inicial es `inventory`: muestra 10 slots vacíos agrupados de a 2 en 5 pares y la selección visual deriva de `snapshot.input.mouse.wheelIndex` mediante pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`. Al presionar `Q`, la UI alterna visualmente entre `inventory` y `spells`; al presionar `F`, alterna visualmente entre `inventory` y `features`. Los modos `spells` y `features` muestran los 10 slots vacíos como slots individuales y seleccionan el slot individual `0..9` derivado de `mouse.wheelIndex`. El feedback de selección ahora es crecimiento rápido del par o slot seleccionado, no un marco como señal principal. No existe inventario real, items, conjuros reales, feats/features reales, `CastCommand`, `UseFeatureCommand`, spell registry, uso de objetos ni selección por números todavía.
+La UI tiene una hotbar visual mínima centrada abajo con tres modos visuales: `inventory`, `spells` y `features`. El modo inicial es `inventory`: muestra 10 slots vacíos agrupados de a 2 en 5 pares y la selección visual deriva de `snapshot.input.mouse.wheelIndex` mediante pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`. Al presionar `Q`, la UI alterna visualmente entre `inventory` y `spells`; al presionar `F`, alterna visualmente entre `inventory` y `features`. Los modos `spells` y `features` muestran los 10 slots vacíos como slots individuales y seleccionan el slot individual `0..9` derivado de `mouse.wheelIndex`. El feedback de selección ahora es crecimiento rápido del par o slot seleccionado, no un marco como señal principal. No existe inventario real, items, spell slots, prepared spells, feats/features reales, `UseFeatureCommand`, uso de objetos ni selección por números todavía.
 
 El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy` y `AttackProfile`; esto no modifica daño, tiempos ni reglas de combate. El cursor custom se posiciona con `left/top` desde JS y mantiene el centrado con CSS.
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`. `createGameApp` también crea un proyectil de prueba temporal para validar la foundation de proyectiles.
 
-El input de mouse se registra sobre `window` desde `createGameApp` para que el cursor custom, feedback de botones, wheel y click izquierdo sigan respondiendo aunque el overlay/UI o el escalado visual del canvas interfieran con eventos directos sobre el canvas.
+El input de mouse se registra sobre `window` desde `createGameApp` para que el cursor custom, feedback de botones, wheel y clicks sigan respondiendo aunque el overlay/UI o el escalado visual del canvas interfieran con eventos directos sobre el canvas.
 
-Se aplicó un refactor de input post-Milestone 5.1: `keyboardInput` quedó como factory pública, `keyboardKeyState` contiene tracking físico/visual y toggle táctico, y `keyboardSnapshot` construye el snapshot visual del teclado. También `mouseInput` quedó como factory pública, mientras `mouseButtonState`, `mouseWheelState` y `mousePointerState` separan botones, rueda y puntero.
+Se aplicó un refactor de input post-Milestone 5.1: `keyboardInput` quedó como factory pública, `keyboardKeyState` contiene tracking físico/visual y toggle táctico, y `keyboardSnapshot` construye el snapshot visual del teclado. También `mouseInput` quedó como factory pública, mientras `mouseButtonState`, `mouseWheelState` y `mousePointerState` separan botones, rueda y puntero. `mouseButtonState` ahora expone intent consumible primario para `LMB` e intent consumible secundario para `RMB`.
 
 Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador DOM, `hudLayout` contiene template/configuración del HUD, y `hudUpdate` contiene helpers de actualización visual, incluyendo cursor custom, anillo radial de acción y hotbar visual mínima. El estado visual de modo de hotbar vive en `quickBarViewState`, dentro de UI, y no es estado de gameplay.
 
 Se aplicó un refactor CSS: `style.css` quedó como entrypoint con `@import`, y los estilos de UI se dividieron por responsabilidad en `src/ui/styles/`.
 
-Todavía no hay conjuros reales, Firebolt, `CastCommand`, spell registry, targeting con mouse, proyectiles creados por comandos, feats/features reales, `UseFeatureCommand`, menú táctico con botones de acción, inventario real, cámara compleja, assets externos, guardado, multiplayer ni servidor.
+Todavía no hay spell slots, mana, cooldowns, prepared spells, known spells, targeting avanzado, hotbar conectada a casteo, feats/features reales, `UseFeatureCommand`, menú táctico con botones de acción, inventario real, cámara compleja, assets externos, guardado, multiplayer ni servidor.
 
 ## Sistemas existentes
 
 - `playerControlSystem`: convierte movement intent en velocidad para entidades `PlayerControlled`.
 - `aiSystem`: procesa entidades `AIControlled`, busca un target válido mediante `aiTargeting` y asigna velocidad de persecución.
 - `movementSystem`: aplica movimiento con `deltaSeconds` y delega la resolución contra tiles a `movementCollision`.
+- `spellCastSystem`: procesa `CastCommand`, obtiene la definición de spell desde `spellRegistry` y crea proyectiles de spell mediante `spellProjectileFactory`.
 - `projectileMovementSystem`: mueve entidades con `Projectile`, `Position`, `Velocity` y `Collider`; remueve proyectiles al chocar contra tiles sólidos si `destroyOnWall` está activo.
 - `projectileImpactSystem`: detecta impacto de proyectiles contra criaturas enemigas válidas, aplica `DamageOnHit` mediante `damageRules` y remueve el proyectil si `destroyOnHit` está activo.
 - `actionEconomySystem`: reduce el tiempo restante de acciones en curso.
@@ -80,10 +85,16 @@ Todavía no hay conjuros reales, Firebolt, `CastCommand`, spell registry, target
 ## Commands existentes
 
 - `AttackCommand`: command mínimo para solicitar ataque melee desde la acción primaria del jugador.
+- `CastCommand`: command mínimo para solicitar casteo de un spell con `actorId`, `spellId` y `targetPoint`.
 
 ## Events existentes
 
 Ninguno.
+
+## Content existente
+
+- `src/content/spells/firebolt.js`: definición mínima data-driven de Firebolt.
+- `src/content/spells/spellRegistry.js`: registry mínimo para obtener definiciones de spell por id.
 
 ## Reglas puras existentes
 
@@ -97,9 +108,9 @@ Ninguno.
 - `keyboardInput`: factory pública que expone `getMovementIntent`, `consumeTacticalToggleIntent` y `getSnapshot`.
 - `keyboardKeyState`: tracking de teclas físicas, teclas visuales y toggle táctico de `Space`.
 - `keyboardSnapshot`: construcción del snapshot visual de teclado para HUD.
-- Input de mouse para acción primaria con click izquierdo, registrado sobre `window` desde app.
-- `mouseInput`: factory pública que expone `consumePrimaryClickIntent` y `getSnapshot`.
-- `mouseButtonState`: tracking de botones y click primario consumible.
+- Input de mouse para acción primaria con click izquierdo y acción secundaria con click derecho, registrado sobre `window` desde app.
+- `mouseInput`: factory pública que expone `consumePrimaryClickIntent`, `consumeSecondaryClickIntent` y `getSnapshot`.
+- `mouseButtonState`: tracking de botones, click primario consumible y click secundario consumible.
 - `mouseWheelState`: tracking de rueda, índice circular `0..9`, dirección y pulso.
 - `mousePointerState`: tracking de posición del puntero.
 - Input no modifica ECS ni componentes.
@@ -129,7 +140,7 @@ Ninguno.
 ## App helpers existentes
 
 - `createGameApp`: coordina creación de mundo, input, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico, proyectil de prueba temporal y snapshot UI.
-- `commandMapper`: convierte input de app en commands mínimos, actualmente click izquierdo en `AttackCommand`.
+- `commandMapper`: convierte input de app en commands mínimos; actualmente `LMB` produce `AttackCommand` y `RMB` produce `CastCommand` de Firebolt si hay puntero válido.
 - `tacticalModeController`: mantiene modo `running`/`tacticalPaused`, command pendiente y liberación del command al despausar.
 
 ## Archivos de aplicación existentes
@@ -146,6 +157,8 @@ Ninguno.
 - `src/domain/rules/damageRules.js`
 - `src/domain/rules/attackRules.js`
 - `src/domain/rules/geometryRules.js`
+- `src/content/spells/firebolt.js`
+- `src/content/spells/spellRegistry.js`
 - `src/game/createPlayer.js`
 - `src/game/createEnemy.js`
 - `src/game/createTestProjectile.js`
@@ -163,12 +176,14 @@ Ninguno.
 - `src/simulation/playerControlSystem.js`
 - `src/simulation/aiSystem.js`
 - `src/simulation/movementSystem.js`
+- `src/simulation/spellCastSystem.js`
 - `src/simulation/projectileMovementSystem.js`
 - `src/simulation/projectileImpactSystem.js`
 - `src/simulation/lifetimeSystem.js`
 - `src/simulation/helpers/movementCollision.js`
 - `src/simulation/helpers/meleeHitDetection.js`
 - `src/simulation/helpers/projectileHitDetection.js`
+- `src/simulation/helpers/spellProjectileFactory.js`
 - `src/simulation/helpers/aiTargeting.js`
 - `src/simulation/helpers/meleeAttackRequests.js`
 - `src/simulation/actionEconomySystem.js`
@@ -191,11 +206,12 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone 6 siguiente scope: agregar `CastCommand` y Firebolt mínimo data-driven usando la foundation genérica de proyectiles, sin conectar todavía inventario real, spell slots, prepared spells ni features reales.
+Milestone 6 siguiente scope: retirar o reemplazar `createTestProjectile` y decidir si Firebolt debe integrarse con economía de acción/cooldown, pausa táctica o hotbar visual. Hacerlo en scopes separados.
 
 ## Riesgos actuales
 
-- El proyectil de prueba temporal existe solo para validar infraestructura; debe eliminarse o reemplazarse cuando `CastCommand`/Firebolt creen proyectiles reales.
+- Firebolt por `RMB` ignora `ActionEconomy`, recursos y cooldowns; es una decisión temporal de Milestone 6 mínimo.
+- El proyectil de prueba temporal existe solo para validar infraestructura; debe eliminarse o reemplazarse ahora que Firebolt crea proyectiles reales.
 - La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
@@ -205,7 +221,7 @@ Milestone 6 siguiente scope: agregar `CastCommand` y Firebolt mínimo data-drive
 - No existe event bus ni events.
 - `createGameApp` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación.
 - La hotbar visual deriva selección desde `wheelIndex`; es una solución provisional de UI, no una fuente de verdad de inventario, spellcasting ni features activables.
-- El modo visual `spells` no representa conjuros reales, spell slots, prepared spells ni capacidad de lanzar conjuros.
+- El modo visual `spells` no representa spell slots, prepared spells ni capacidad de elegir spell.
 - El modo visual `features` no representa feats/features reales, recursos, cooldowns ni capacidad de activar habilidades.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
@@ -213,6 +229,17 @@ Milestone 6 siguiente scope: agregar `CastCommand` y Firebolt mínimo data-drive
 
 ## Decisiones recientes
 
+- Se agregó Firebolt mínimo por botón derecho mediante `CastCommand`.
+- Se agregó `CommandType.Cast` y `CastCommand`.
+- Se agregó intent secundario consumible de mouse para `RMB`.
+- `commandMapper` mapea `RMB` a `CastCommand({ spellId: "firebolt" })` usando la posición actual del puntero como `targetPoint`.
+- Se agregó `src/content/spells/firebolt.js` como definición mínima data-driven.
+- Se agregó `src/content/spells/spellRegistry.js` como registry mínimo de spells.
+- Se agregó `spellCastSystem`, que usa el registry y no hardcodea Firebolt.
+- Se agregó `spellProjectileFactory` para crear proyectiles ECS desde actor, target y definición.
+- Firebolt usa la foundation genérica de proyectiles: `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable`, `Faction`.
+- No se conectó hotbar/UI a casteo.
+- No se agregaron spell slots, mana, cooldowns, prepared spells ni known spells.
 - Se agregó foundation mínima de proyectiles genéricos ECS.
 - Se agregaron componentes `Projectile`, `Lifetime` y `DamageOnHit`.
 - Se agregó `projectileMovementSystem` para mover proyectiles y destruirlos contra tiles sólidos.
@@ -221,9 +248,6 @@ Milestone 6 siguiente scope: agregar `CastCommand` y Firebolt mínimo data-drive
 - Se agregó `projectileHitDetection` como helper de detección de targets válidos por facción, `DefenseProfile` y overlap de rectángulos.
 - Se agregó `rectsOverlap` a `geometryRules` como regla pura compartida.
 - Se agregó `createTestProjectile` como fixture temporal de verificación creada desde `createGameApp`.
-- No se implementó Firebolt.
-- No se creó `CastCommand`.
-- No se conectó UI, input ni hotbar a proyectiles.
 - Se agregó modo visual `features` a la hotbar: `F` alterna entre `features` e `inventory` dentro de UI.
 - La hotbar visual ahora tiene tres modos: `inventory`, `spells` y `features`.
 - `Q` alterna entre `spells` e `inventory`; si la hotbar está en `features`, `Q` cambia a `spells`.
@@ -235,7 +259,6 @@ Milestone 6 siguiente scope: agregar `CastCommand` y Firebolt mínimo data-drive
 - En `spells` y `features`, la selección visual deriva de `mouse.wheelIndex` como slot individual `0..9`.
 - El feedback de selección de hotbar pasó de marco/borde principal a crecimiento rápido mediante CSS `transform: scale(...)`.
 - `Q` y `F` no lanzan conjuros, no activan features, no crean commands y no resuelven gameplay.
-- No existe `CastCommand`, `UseFeatureCommand`, spell registry, prepared spells reales, feats/features reales ni Firebolt todavía.
 - `quickBarViewState.js` contiene el estado visual de hotbar y vive en UI, no en app ni simulation.
 - `style.css` fue dividido en módulos CSS por responsabilidad y quedó como entrypoint con `@import`.
 - Se crearon módulos CSS en `src/ui/styles/`: `base.css`, `canvas.css`, `cursor.css`, `tacticalStatus.css`, `quickBar.css`, `inputHud.css` y `debugPanel.css`.
@@ -244,7 +267,7 @@ Milestone 6 siguiente scope: agregar `CastCommand` y Firebolt mínimo data-drive
 - La selección de hotbar es provisional y visual: se deriva de `mouse.wheelIndex` sin crear inventario real ni controller app-level.
 - No se implementó selección por números `1-5`; queda para un scope posterior.
 - `mouseInput.js` fue dividido para separar botones, rueda y puntero, manteniendo la misma API pública y el mismo snapshot.
-- `mouseButtonState.js` contiene tracking de botones y click primario consumible.
+- `mouseButtonState.js` contiene tracking de botones y clicks consumibles.
 - `mouseWheelState.js` contiene rueda, dirección, pulso e índice circular `0..9`.
 - `mousePointerState.js` contiene posición del puntero.
 - `createGameApp` registra `createMouseInput(window)` para robustecer cursor custom, feedback de mouse, rueda y clicks.
