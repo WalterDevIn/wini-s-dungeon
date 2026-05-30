@@ -16,9 +16,11 @@ Se aplicó el refactor preventivo `refactor/creature-factory-foundation`: existe
 
 Se aplicó el refactor preventivo `refactor/creature-content-definitions`: las definiciones concretas de criaturas viven ahora en `src/content/creatures`. `humanAdventurer` define la criatura inicial controlada por el jugador y `goblinSkirmisher` define la criatura enemiga inicial controlada por IA. `createPlayer(world)` y `createEnemy(world)` quedan como wrappers temporales de demo que obtienen definiciones desde `creatureRegistry` y llaman a `createCreature`. `Creature.kind` dejó de representar `player`/`enemy` y ahora expresa identidad de criatura mínima: `human` y `goblin`. No se agregaron componentes, sistemas, commands, events ni inventario.
 
-Se agregó `content/basic-creature-roster-rat-bat-stonecrawler`: existen definiciones de content para `rat`, `bat` y `stoneCrawler`, registradas en `creatureRegistry`, pero todavía no se usan en spawns. El enemigo inicial sigue siendo `goblinSkirmisher` y no cambió el gameplay observable.
+Se agregó `content/basic-creature-roster-rat-bat-stonecrawler`: existen definiciones de content para `rat`, `bat` y `stoneCrawler`, registradas en `creatureRegistry`.
 
-Se aplicó el refactor preventivo `refactor/creature-position-as-spawn-override`: las definiciones de `src/content/creatures` ya no contienen `position`. La posición ahora es dato de spawn y se pasa a `createCreature(world, definition, { position })`. `createPlayer` conserva la posición inicial `{ x: 96, y: 96 }` y `createEnemy` conserva `{ x: 240, y: 192 }`, sin tocar app ni gameplay.
+Se aplicó el refactor preventivo `refactor/creature-position-as-spawn-override`: las definiciones de `src/content/creatures` ya no contienen `position`. La posición ahora es dato de spawn y se pasa a `createCreature(world, definition, { position })`. `createPlayer` conserva la posición inicial `{ x: 96, y: 96 }` sin tocar su wrapper.
+
+Se agregó `feature/demo-encounter-spawn-list`: existe `src/game/createDemoEncounter.js` como encounter estático de demo. `createGameApp` ahora crea el jugador y luego llama a `createDemoEncounter(world)` en lugar de crear un único `createEnemy(world)`. El encounter inicial spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas usando `createCreature(world, definition, { position })`. El tilemap estático ahora tiene una sala inicial a la izquierda, una sala de encuentro a la derecha y una conexión caminable entre ambas. No hay dungeon generation procedural, puertas, línea de visión ni sistema dinámico de spawn.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -32,13 +34,13 @@ El botón derecho del mouse genera un `CastCommand` mínimo para `firebolt` solo
 
 La pausa táctica vive en app/session, no en ECS ni simulation. Mientras el modo táctico está pausado, `runSimulationStep` no se llama; render y HUD siguen actualizándose.
 
-El juego tiene vida, daño, facciones, criatura jugador, enemigo, muerte/remoción de entidad y combate melee mínimo con fases. El ataque entra en `windup`, luego resuelve impacto contra el estado actual del mundo, y después entra en `recovery`.
+El juego tiene vida, daño, facciones, criaturas enemigas, muerte/remoción de entidad y combate melee mínimo con fases. El ataque entra en `windup`, luego resuelve impacto contra el estado actual del mundo, y después entra en `recovery`.
 
 Regla actual de ataque melee: un ataque confirmado consume la acción aunque no impacte. El daño solo se aplica si, al terminar el `windup`, existe un objetivo enemigo válido dentro del alcance. Como melee ya ignora nuevos ataques si `ActionEconomy.currentAction` existe, Firebolt bloquea melee durante su windup y recovery global sin tocar lógica especial de melee.
 
-El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y distancia, lo persigue en línea recta y ataca al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
+Los enemigos poseen IA simple con `AIControlled`. Detectan al jugador por facción y distancia, lo persiguen en línea recta y atacan al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
 
-Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`. `projectileMovementSystem` mueve proyectiles y los destruye contra tiles sólidos. `projectileImpactSystem` detecta impacto contra criaturas enemigas, filtra por facción y `DefenseProfile.canBeHit`, aplica daño mitigado con `damageRules` y remueve el proyectil si corresponde. `lifetimeSystem` remueve cualquier entidad con `Lifetime` vencido. Ya no existe proyectil automático de prueba al iniciar el juego; la verificación manual de proyectiles se hace casteando Firebolt con `RMB`.
+Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`. `projectileMovementSystem` mueve proyectiles y los destruye contra tiles sólidos. `projectileImpactSystem` detecta impacto de proyectiles contra criaturas enemigas, filtra por facción y `DefenseProfile.canBeHit`, aplica daño mitigado con `damageRules` y remueve el proyectil si corresponde. `lifetimeSystem` remueve cualquier entidad con `Lifetime` vencido. Ya no existe proyectil automático de prueba al iniciar el juego; la verificación manual de proyectiles se hace casteando Firebolt con `RMB`.
 
 Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. La definición incluye `id`, `name`, `kind`, `targeting`, `cast` y `effect`. Su efecto actual es `spawnProjectile`; el proyectil usa `speed: 260`, `size: 10`, `damage: 3`, `lifetimeSeconds: 1.4`, `color: "#ff7a33"`, `glyph: "x"`, `fontSize: 16`, `destroyOnWall: true` y `destroyOnHit: true`.
 
@@ -101,16 +103,17 @@ Ninguno.
 - `src/content/spells/spellRegistry.js`: registry mínimo para obtener definiciones de spell por id.
 - `src/content/creatures/humanAdventurer.js`: definición data-driven mínima de la criatura inicial del jugador, sin posición.
 - `src/content/creatures/goblinSkirmisher.js`: definición data-driven mínima de la criatura enemiga inicial, sin posición.
-- `src/content/creatures/rat.js`: definición data-driven mínima de rat, sin posición, disponible pero no usada por spawns.
-- `src/content/creatures/bat.js`: definición data-driven mínima de bat, sin posición, disponible pero no usada por spawns.
-- `src/content/creatures/stoneCrawler.js`: definición data-driven mínima de stoneCrawler, sin posición, disponible pero no usada por spawns.
+- `src/content/creatures/rat.js`: definición data-driven mínima de rat, sin posición.
+- `src/content/creatures/bat.js`: definición data-driven mínima de bat, sin posición.
+- `src/content/creatures/stoneCrawler.js`: definición data-driven mínima de stoneCrawler, sin posición.
 - `src/content/creatures/creatureRegistry.js`: registry mínimo para obtener definiciones de criatura por id.
 
 ## Factories existentes
 
 - `src/domain/factories/createCreature.js`: factory mínima para crear criaturas ECS desde una definición de content y datos de spawn explícitos, actualmente `position`, con componentes comunes y controles opcionales `PlayerControlled` o `AIControlled`.
 - `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature` con posición inicial `{ x: 96, y: 96 }`.
-- `src/game/createEnemy.js`: wrapper de demo que conserva `createEnemy(world)`, obtiene `goblinSkirmisher` desde content y delega en `createCreature` con posición inicial `{ x: 240, y: 192 }`.
+- `src/game/createEnemy.js`: wrapper legacy/demo que conserva `createEnemy(world)`, obtiene `goblinSkirmisher` desde content y delega en `createCreature` con posición inicial `{ x: 240, y: 192 }`, pero el arranque actual usa `createDemoEncounter` en su lugar.
+- `src/game/createDemoEncounter.js`: encounter estático de demo que spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas.
 
 ## Reglas puras existentes
 
@@ -139,7 +142,7 @@ Ninguno.
 
 ## App helpers existentes
 
-- `createGameApp`: coordina creación de mundo, input, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico, `aimIntent` y snapshot UI.
+- `createGameApp`: coordina creación de mundo, input, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico, `aimIntent` y snapshot UI. Crea el jugador y el encounter estático de demo.
 - `commandMapper`: convierte input de app en commands mínimos; actualmente `LMB` produce `AttackCommand` y `RMB` produce `CastCommand` de Firebolt si hay puntero válido.
 - `tacticalModeController`: mantiene modo `running`/`tacticalPaused`, command pendiente y liberación del command al despausar.
 
@@ -169,6 +172,7 @@ Ninguno.
 - `src/content/creatures/creatureRegistry.js`
 - `src/game/createPlayer.js`
 - `src/game/createEnemy.js`
+- `src/game/createDemoEncounter.js`
 - `src/game/playerQueries.js`
 - `src/game/buildUiSnapshot.js`
 - `src/input/keyboardInput.js`
@@ -206,7 +210,7 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone Pre-7 siguiente scope recomendado: `feature/inventory-trait-foundation` o `feature/demo-encounter-spawn-list`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador. Si se prioriza usar el roster nuevo, crear antes un spawn list/encounter mínimo que pase posiciones explícitas.
+Milestone Pre-7 siguiente scope recomendado: validar el encounter estático y luego elegir entre `feature/inventory-trait-foundation` o Milestone 7 `doors-and-vision`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador.
 
 Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reutilizar `actionEconomyRules` en lugar de duplicar protocolo de `ActionEconomy` dentro de cada sistema.
 
@@ -215,7 +219,8 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 - Firebolt por `RMB` usa `ActionEconomy`, pero no tiene spell slots, recursos ni cooldown visual.
 - `spellCastSystem` todavía concentra varias responsabilidades: actualización de target, validación de spell, resolución de fase y resolución de efecto. No partir todavía salvo que aparezca un segundo spell o segundo effect type, o que el archivo siga creciendo.
 - `createCreature` todavía recibe definiciones con estructura mínima; no existe sistema de species/archetype/progression y no debe agregarse sin scope.
-- `rat`, `bat` y `stoneCrawler` existen en content, pero no hay spawn list ni encounter system para usarlos todavía.
+- `createDemoEncounter` es un encounter estático de demo, no un sistema de spawn dinámico ni generación de mazmorra.
+- El tilemap nuevo es estático y manual; no hay `mapGeneration`, `rooms`, puertas ni línea de visión.
 - Inventory todavía no existe; cuando se agregue, debe ser trait ECS reutilizable para criaturas/contenedores.
 - La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
@@ -232,21 +237,14 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
-- Se aplicó `refactor/creature-position-as-spawn-override`.
-- `createCreature(world, definition, spawnData)` requiere posición explícita en `spawnData.position`.
-- Las definiciones de `src/content/creatures` ya no contienen `position`.
-- `createPlayer(world)` pasa `{ x: 96, y: 96 }` como posición de spawn.
-- `createEnemy(world)` pasa `{ x: 240, y: 192 }` como posición de spawn.
-- Creature definition = identidad + stats + capacidades base.
-- Spawn data = posición y futuros overrides de aparición.
-- Se agregó `src/content/creatures/rat.js`.
-- Se agregó `src/content/creatures/bat.js`.
-- Se agregó `src/content/creatures/stoneCrawler.js`.
-- `creatureRegistry` registra `rat`, `bat` y `stoneCrawler`.
-- Estas criaturas nuevas son content disponible, pero todavía no se usan por spawns.
-- No se agregaron componentes, sistemas, commands, events, loot, drops, inventario, IA especial, vuelo real, veneno, knockback ni habilidades.
-- Content define qué criatura existe; `createCreature` materializa ECS.
-- `creatureRegistry` solo devuelve definiciones; no crea entidades.
+- Se agregó `src/game/createDemoEncounter.js`.
+- `createDemoEncounter(world)` spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` usando definiciones de content y posiciones explícitas.
+- `createGameApp` ahora llama a `createDemoEncounter(world)` después de `createPlayer(world)`.
+- `createGameApp` ya no llama a `createEnemy(world)` en el arranque actual, para evitar duplicar el goblin.
+- `createEnemy(world)` se conserva como wrapper legacy/demo simple.
+- `tilemap.js` cambió a un layout estático con sala inicial, sala de encuentro y conexión caminable.
+- No se creó dungeon generation procedural.
+- No se crearon puertas, línea de visión, sistemas nuevos, commands, events, componentes, event bus ni command buffer.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
