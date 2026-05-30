@@ -28,6 +28,8 @@ El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom ti
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
+El input de mouse se registra sobre `window` desde `createGameApp` para que el cursor custom, feedback de botones, wheel y click izquierdo sigan respondiendo aunque el overlay/UI o el escalado visual del canvas interfieran con eventos directos sobre el canvas.
+
 Se aplicó un refactor de input post-Milestone 5.1: `keyboardInput` quedó como factory pública, `keyboardKeyState` contiene tracking físico/visual y toggle táctico, y `keyboardSnapshot` construye el snapshot visual del teclado.
 
 Se aplicó un refactor de UI post-HUD extendido: `hudUi` quedó como orquestador DOM, `hudLayout` contiene template/configuración del HUD, y `hudUpdate` contiene helpers de actualización visual, incluyendo cursor custom y anillo radial de acción.
@@ -83,7 +85,7 @@ Ninguno.
 - `keyboardSnapshot`: construcción del snapshot visual de teclado para HUD.
 - Input de teclado expone snapshot visual por letra de movimiento (`W`, `A`, `R`, `S`) y snapshot visual de `Q`, `F`, `Tab` y `Space`.
 - Input de teclado expone `consumeTacticalToggleIntent()` para alternar pausa táctica con `Space` en keydown inicial.
-- Input de mouse para acción primaria con click izquierdo.
+- Input de mouse para acción primaria con click izquierdo, registrado sobre `window` desde app.
 - Input de mouse expone snapshot visual de `LMB`, `RMB`, `M4`, `M5`, dirección/pulso de rueda, índice circular de rueda `0..9` y posición actual del puntero.
 - Input produce movement intent y primary click intent.
 - Input no modifica ECS ni componentes.
@@ -166,6 +168,7 @@ Milestone 5.2 o refactor previo: decidir si conviene agregar panel táctico real
 
 ## Decisiones recientes
 
+- `createGameApp` ahora registra `createMouseInput(window)` para robustecer cursor custom, feedback de mouse, rueda y clicks.
 - Se corrigió el cursor custom para posicionarse con `left/top` desde JS y centrarse con `transform: translate(-50%, -50%)` desde CSS.
 - Se agregó cursor custom tipo `+` como overlay DOM y se ocultó el cursor nativo sobre el juego.
 - Se agregó anillo radial alrededor del cursor para representar `windup` y `recovery` del jugador controlado.
