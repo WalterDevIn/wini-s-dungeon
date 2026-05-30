@@ -2,10 +2,6 @@ const BAT_SIZE = 20;
 
 export const batDefinition = Object.freeze({
   id: "bat",
-  position: {
-    x: 240,
-    y: 192,
-  },
   renderable: {
     shape: "glyph",
     glyph: "b",
