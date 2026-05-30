@@ -1,26 +1,19 @@
 export function createMouseInput(target) {
-  let leftButtonPressed = false;
+  const pressedButtons = new Set();
   let primaryClickRequested = false;
 
   function handleMouseDown(event) {
-    if (event.button !== 0) {
-      return;
-    }
+    pressedButtons.add(event.button);
 
-    if (!leftButtonPressed) {
+    if (event.button === 0) {
       primaryClickRequested = true;
     }
 
-    leftButtonPressed = true;
     event.preventDefault();
   }
 
   function handleMouseUp(event) {
-    if (event.button !== 0) {
-      return;
-    }
-
-    leftButtonPressed = false;
+    pressedButtons.delete(event.button);
     event.preventDefault();
   }
 
@@ -40,7 +33,11 @@ export function createMouseInput(target) {
 
   function getSnapshot() {
     return {
-      leftButtonPressed,
+      leftButtonPressed: pressedButtons.has(0),
+      middleButtonPressed: pressedButtons.has(1),
+      rightButtonPressed: pressedButtons.has(2),
+      button4Pressed: pressedButtons.has(3),
+      button5Pressed: pressedButtons.has(4),
     };
   }
 
