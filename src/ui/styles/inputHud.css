@@ -8,32 +8,11 @@
   box-shadow: 0 0 0 1px #000, 0 0 18px rgba(244, 241, 232, 0.08);
 }
 
-.keyboard-input-hud {
-  left: 1.25rem;
-  display: grid;
-  gap: 0.35rem;
-  justify-items: start;
-}
-
-.mouse-input-hud {
-  right: 1.25rem;
-  display: grid;
-  gap: 0.35rem;
-  justify-items: end;
-}
-
-.keyboard-key-row {
-  display: flex;
-  gap: 0.35rem;
-}
-
-.keyboard-key-row-middle {
-  padding-left: 5.35rem;
-}
-
-.keyboard-key-row-bottom {
-  padding-left: 3.95rem;
-}
+.keyboard-input-hud { left: 1.25rem; display: grid; gap: 0.35rem; justify-items: start; }
+.mouse-input-hud { right: 1.25rem; display: grid; gap: 0.35rem; justify-items: end; }
+.keyboard-key-row { display: flex; gap: 0.35rem; }
+.keyboard-key-row-middle { padding-left: 5.35rem; }
+.keyboard-key-row-bottom { padding-left: 3.95rem; }
 
 .wheel-feedback {
   display: none;
@@ -47,11 +26,7 @@
   color: #d7d0bd;
   box-shadow: 0 0 0 1px #000, 0 0 18px rgba(244, 241, 232, 0.08);
   opacity: 0.68;
-  transition:
-    border-color 100ms ease,
-    color 100ms ease,
-    opacity 100ms ease,
-    box-shadow 100ms ease;
+  transition: border-color 100ms ease, color 100ms ease, opacity 100ms ease, box-shadow 100ms ease;
 }
 
 .wheel-feedback.is-active {
@@ -96,47 +71,16 @@
   letter-spacing: 0.06em;
   line-height: 1;
   text-transform: uppercase;
-  transition:
-    background 100ms ease,
-    border-color 100ms ease,
-    color 100ms ease,
-    transform 100ms ease,
-    box-shadow 100ms ease;
+  transition: background 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease, box-shadow 100ms ease;
 }
 
-.key-cap-tab {
-  min-width: 3.6rem;
-}
-
-.key-cap-space {
-  min-width: 5.4rem;
-}
-
-.mouse-cap-lmb {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.mouse-cap-rmb {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-.mouse-cap-m5 {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.mouse-cap-wheel {
-  grid-column: 2 / 4;
-  grid-row: 2;
-  min-width: auto;
-}
-
-.mouse-cap-m4 {
-  grid-column: 1;
-  grid-row: 3;
-}
+.key-cap-tab { min-width: 3.6rem; }
+.key-cap-space { min-width: 5.4rem; }
+.mouse-cap-lmb { grid-column: 2; grid-row: 1; }
+.mouse-cap-rmb { grid-column: 3; grid-row: 1; }
+.mouse-cap-m5 { grid-column: 1; grid-row: 2; }
+.mouse-cap-wheel { grid-column: 2 / 4; grid-row: 2; min-width: auto; }
+.mouse-cap-m4 { grid-column: 1; grid-row: 3; }
 
 .key-cap.is-pressed {
   transform: translateY(1px);
