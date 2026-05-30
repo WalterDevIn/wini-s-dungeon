@@ -52,7 +52,8 @@ export function updateCursorFeedback(cursorFeedback, mouseInput, playerActionSta
     return;
   }
 
-  cursorFeedback.root.style.transform = `translate(${pointer.x}px, ${pointer.y}px)`;
+  cursorFeedback.root.style.left = `${pointer.x}px`;
+  cursorFeedback.root.style.top = `${pointer.y}px`;
 
   const phase = playerActionState.phase;
   const showRing = phase === "windup" || phase === "recovery";
