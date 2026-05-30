@@ -31,6 +31,8 @@ export function renderHudTemplate() {
       <span class="tactical-status-title">Pausa</span>
     </section>
 
+    <section class="player-health-bar" data-player-health-bar aria-label="Vida del jugador"></section>
+
     <section class="quick-bar" data-quick-bar aria-label="Barra rápida visual">
       ${renderQuickBarPairs()}
     </section>
