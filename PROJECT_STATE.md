@@ -18,6 +18,8 @@ Se aplicó el refactor preventivo `refactor/creature-content-definitions`: las d
 
 Se agregó `content/basic-creature-roster-rat-bat-stonecrawler`: existen definiciones de content para `rat`, `bat` y `stoneCrawler`, registradas en `creatureRegistry`, pero todavía no se usan en spawns. El enemigo inicial sigue siendo `goblinSkirmisher` y no cambió el gameplay observable.
 
+Se aplicó el refactor preventivo `refactor/creature-position-as-spawn-override`: las definiciones de `src/content/creatures` ya no contienen `position`. La posición ahora es dato de spawn y se pasa a `createCreature(world, definition, { position })`. `createPlayer` conserva la posición inicial `{ x: 96, y: 96 }` y `createEnemy` conserva `{ x: 240, y: 192 }`, sin tocar app ni gameplay.
+
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
@@ -97,18 +99,18 @@ Ninguno.
 
 - `src/content/spells/firebolt.js`: definición mínima data-driven de Firebolt como conjuro con targeting, cast y effect.
 - `src/content/spells/spellRegistry.js`: registry mínimo para obtener definiciones de spell por id.
-- `src/content/creatures/humanAdventurer.js`: definición data-driven mínima de la criatura inicial del jugador.
-- `src/content/creatures/goblinSkirmisher.js`: definición data-driven mínima de la criatura enemiga inicial.
-- `src/content/creatures/rat.js`: definición data-driven mínima de rat, disponible pero no usada por spawns.
-- `src/content/creatures/bat.js`: definición data-driven mínima de bat, disponible pero no usada por spawns.
-- `src/content/creatures/stoneCrawler.js`: definición data-driven mínima de stoneCrawler, disponible pero no usada por spawns.
+- `src/content/creatures/humanAdventurer.js`: definición data-driven mínima de la criatura inicial del jugador, sin posición.
+- `src/content/creatures/goblinSkirmisher.js`: definición data-driven mínima de la criatura enemiga inicial, sin posición.
+- `src/content/creatures/rat.js`: definición data-driven mínima de rat, sin posición, disponible pero no usada por spawns.
+- `src/content/creatures/bat.js`: definición data-driven mínima de bat, sin posición, disponible pero no usada por spawns.
+- `src/content/creatures/stoneCrawler.js`: definición data-driven mínima de stoneCrawler, sin posición, disponible pero no usada por spawns.
 - `src/content/creatures/creatureRegistry.js`: registry mínimo para obtener definiciones de criatura por id.
 
 ## Factories existentes
 
-- `src/domain/factories/createCreature.js`: factory mínima para crear criaturas ECS desde una definición de content, con componentes comunes y controles opcionales `PlayerControlled` o `AIControlled`.
-- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature`.
-- `src/game/createEnemy.js`: wrapper de demo que conserva `createEnemy(world)`, obtiene `goblinSkirmisher` desde content y delega en `createCreature`.
+- `src/domain/factories/createCreature.js`: factory mínima para crear criaturas ECS desde una definición de content y datos de spawn explícitos, actualmente `position`, con componentes comunes y controles opcionales `PlayerControlled` o `AIControlled`.
+- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature` con posición inicial `{ x: 96, y: 96 }`.
+- `src/game/createEnemy.js`: wrapper de demo que conserva `createEnemy(world)`, obtiene `goblinSkirmisher` desde content y delega en `createCreature` con posición inicial `{ x: 240, y: 192 }`.
 
 ## Reglas puras existentes
 
@@ -204,7 +206,7 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone Pre-7 siguiente scope recomendado: `feature/inventory-trait-foundation`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador.
+Milestone Pre-7 siguiente scope recomendado: `feature/inventory-trait-foundation` o `feature/demo-encounter-spawn-list`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador. Si se prioriza usar el roster nuevo, crear antes un spawn list/encounter mínimo que pase posiciones explícitas.
 
 Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reutilizar `actionEconomyRules` en lugar de duplicar protocolo de `ActionEconomy` dentro de cada sistema.
 
@@ -230,16 +232,21 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
+- Se aplicó `refactor/creature-position-as-spawn-override`.
+- `createCreature(world, definition, spawnData)` requiere posición explícita en `spawnData.position`.
+- Las definiciones de `src/content/creatures` ya no contienen `position`.
+- `createPlayer(world)` pasa `{ x: 96, y: 96 }` como posición de spawn.
+- `createEnemy(world)` pasa `{ x: 240, y: 192 }` como posición de spawn.
+- Creature definition = identidad + stats + capacidades base.
+- Spawn data = posición y futuros overrides de aparición.
 - Se agregó `src/content/creatures/rat.js`.
 - Se agregó `src/content/creatures/bat.js`.
 - Se agregó `src/content/creatures/stoneCrawler.js`.
 - `creatureRegistry` registra `rat`, `bat` y `stoneCrawler`.
 - Estas criaturas nuevas son content disponible, pero todavía no se usan por spawns.
-- No se modificaron `createPlayer`, `createEnemy` ni `createCreature` en este scope.
 - No se agregaron componentes, sistemas, commands, events, loot, drops, inventario, IA especial, vuelo real, veneno, knockback ni habilidades.
 - Content define qué criatura existe; `createCreature` materializa ECS.
 - `creatureRegistry` solo devuelve definiciones; no crea entidades.
-- `Creature.kind` ya no usa `player`/`enemy`; usa identidades de criatura como `human`, `goblin`, `rat`, `bat` y `stoneCrawler`.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
