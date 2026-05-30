@@ -1,51 +1,47 @@
 const KEYBOARD_CAPS = Object.freeze([
-  { code: "moveUp", label: "W", group: "movement-top" },
-  { code: "moveLeft", label: "A", group: "movement-bottom" },
-  { code: "moveRight", label: "R", group: "movement-bottom" },
-  { code: "moveDown", label: "S", group: "movement-bottom" },
-  { code: "q", label: "Q", group: "actions" },
-  { code: "f", label: "F", group: "actions" },
-  { code: "Tab", label: "Tab", group: "actions", size: "tab" },
-  { code: "Space", label: "Space", group: "actions", size: "space" },
+  { code: "Tab", label: "Tab", size: "tab" },
+  { code: "q", label: "Q" },
+  { code: "moveUp", label: "W" },
+  { code: "f", label: "F" },
+  { code: "moveLeft", label: "A" },
+  { code: "moveRight", label: "R" },
+  { code: "moveDown", label: "S" },
+  { code: "Space", label: "Space", size: "space" },
 ]);
 
 const MOUSE_CAPS = Object.freeze([
-  { code: "leftButtonPressed", label: "LMB" },
-  { code: "rightButtonPressed", label: "RMB" },
-  { code: "wheelPulse", label: "Wheel" },
-  { code: "button4Pressed", label: "M4" },
-  { code: "button5Pressed", label: "M5" },
+  { code: "leftButtonPressed", label: "LMB", className: "mouse-cap-lmb" },
+  { code: "rightButtonPressed", label: "RMB", className: "mouse-cap-rmb" },
+  { code: "button5Pressed", label: "M5", className: "mouse-cap-m5" },
+  { code: "wheelPulse", label: "Wheel", className: "mouse-cap-wheel" },
+  { code: "button4Pressed", label: "M4", className: "mouse-cap-m4" },
 ]);
 
 export function renderHudTemplate() {
   return `
     <section class="tactical-status" data-tactical-status aria-label="Modo táctico">
-      <span class="tactical-status-title">Tactical</span>
-      <span class="tactical-status-mode" data-tactical-mode>running</span>
-      <span class="tactical-status-action" data-tactical-pending-action>none</span>
+      <span class="tactical-status-title">Pausa</span>
     </section>
 
-    <section class="wheel-feedback" data-wheel-feedback aria-label="Giro de rueda">
-      <span class="wheel-feedback-label">Wheel</span>
-      <span class="wheel-feedback-direction" data-wheel-direction>-</span>
-      <span class="wheel-feedback-index" data-wheel-index-small>0</span>
-    </section>
-
-    <section class="input-hud" aria-label="Entradas presionadas">
-      <div class="keyboard-hud" aria-label="Teclado">
-        <div class="movement-key-block">
-          <div class="movement-key-row movement-key-row-top">
-            ${renderKeyCap(KEYBOARD_CAPS[0])}
-          </div>
-          <div class="movement-key-row movement-key-row-bottom">
-            ${KEYBOARD_CAPS.filter((keyCap) => keyCap.group === "movement-bottom").map(renderKeyCap).join("")}
-          </div>
-        </div>
-        <div class="action-key-row">
-          ${KEYBOARD_CAPS.filter((keyCap) => keyCap.group === "actions").map(renderKeyCap).join("")}
-        </div>
+    <section class="keyboard-input-hud" aria-label="Teclado">
+      <div class="keyboard-key-row keyboard-key-row-top">
+        ${KEYBOARD_CAPS.slice(0, 4).map(renderKeyCap).join("")}
       </div>
-      <div class="mouse-hud" aria-label="Mouse">
+      <div class="keyboard-key-row keyboard-key-row-middle">
+        ${KEYBOARD_CAPS.slice(4, 7).map(renderKeyCap).join("")}
+      </div>
+      <div class="keyboard-key-row keyboard-key-row-bottom">
+        ${renderKeyCap(KEYBOARD_CAPS[7])}
+      </div>
+    </section>
+
+    <section class="mouse-input-hud" aria-label="Mouse">
+      <div class="wheel-feedback" data-wheel-feedback aria-label="Giro de rueda">
+        <span class="wheel-feedback-label">Wheel</span>
+        <span class="wheel-feedback-direction" data-wheel-direction>-</span>
+        <span class="wheel-feedback-index" data-wheel-index-small>0</span>
+      </div>
+      <div class="mouse-hud" aria-label="Botones del mouse">
         ${MOUSE_CAPS.map(renderMouseCap).join("")}
       </div>
     </section>
@@ -79,6 +75,6 @@ function renderKeyCap({ code, label, size = "normal" }) {
   return `<div class="${classes}" data-key-code="${code}">${label}</div>`;
 }
 
-function renderMouseCap({ code, label }) {
-  return `<div class="key-cap mouse-cap" data-mouse-code="${code}">${label}</div>`;
+function renderMouseCap({ code, label, className }) {
+  return `<div class="key-cap mouse-cap ${className}" data-mouse-code="${code}">${label}</div>`;
 }
