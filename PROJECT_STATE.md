@@ -24,7 +24,7 @@ El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y
 
 La UI mínima muestra feedback de input dividido en dos hemisferios inferiores: teclado en esquina inferior izquierda y mouse/rueda en esquina inferior derecha. El mouse usa una grilla 3x3 con `LMB`, `RMB`, `M5`, `Wheel` y `M4`; `LMB` y `RMB` tienen tamaño visual amplio, mientras `M4` y `M5` quedan compactos. El indicador externo de rueda con número/dirección queda oculto temporalmente; el botón `Wheel` integrado en la grilla sigue visible y el debug panel sigue mostrando el índice de rueda. El teclado muestra `Tab`, `Q`, `W`, `F`, `A`, `R`, `S` y `Space`. La etiqueta superior `Pausa` solo aparece durante `tacticalPaused`. El debug panel sigue mostrando modo, acción preparada, índice de rueda, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
 
-La UI tiene una hotbar visual mínima de inventario rápido centrada abajo: 10 slots vacíos agrupados de a 2 en 5 pares. La selección actual es provisional y puramente visual: se deriva de `snapshot.input.mouse.wheelIndex` mediante pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`. No existe inventario real, items, uso de objetos ni selección por números todavía.
+La UI tiene una hotbar visual mínima de inventario rápido centrada abajo: 10 slots vacíos agrupados de a 2 en 5 pares. La selección actual es provisional y puramente visual: se deriva de `snapshot.input.mouse.wheelIndex` mediante pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`. La hotbar no tiene borde global ni números sobre los pares; los pares no seleccionados no muestran borde visible y solo el par seleccionado conserva feedback visual. No existe inventario real, items, uso de objetos ni selección por números todavía.
 
 El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy` y `AttackProfile`; esto no modifica daño, tiempos ni reglas de combate. El cursor custom se posiciona con `left/top` desde JS y mantiene el centrado con CSS.
 
@@ -173,6 +173,8 @@ Milestone 5.2: decidir si se agrega selección real de hotbar por números `1-5`
 
 ## Decisiones recientes
 
+- Se simplificó la hotbar visual eliminando borde global, números sobre pares y borde visible de pares no seleccionados.
+- El par seleccionado conserva borde/feedback visual.
 - Se agregó hotbar visual mínima de inventario rápido: 10 slots vacíos agrupados de a 2 en 5 pares.
 - La selección de hotbar es provisional y visual: se deriva de `mouse.wheelIndex` sin crear inventario real ni controller app-level.
 - No se implementó selección por números `1-5`; queda para un scope posterior.
