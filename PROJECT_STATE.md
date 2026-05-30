@@ -12,7 +12,9 @@ Milestone 6 está iniciado y funcional: ya existe foundation mínima de proyecti
 
 Se aplicó el refactor preventivo `refactor/action-economy-rules`: el protocolo común de acciones con fases vive en `src/domain/rules/actionEconomyRules.js`. `meleeCombatSystem` y `spellCastSystem` siguen resolviendo sus reglas específicas, pero ya no setean manualmente en varios lugares `currentAction`, `phase`, `timeRemaining`, `phaseDuration` ni la limpieza de `pendingAttack`/`pendingSpell`.
 
-Se aplicó el refactor preventivo `refactor/creature-factory-foundation`: existe `src/domain/factories/createCreature.js` como factory base para criaturas ECS. `src/game/createPlayer.js` y `src/game/createEnemy.js` conservan sus APIs públicas, pero ahora delegan la construcción común en `createCreature`. El jugador queda modelado como `Creature + PlayerControlled`; el enemigo como `Creature + AIControlled`. No se agregaron componentes, sistemas, commands, events ni inventario.
+Se aplicó el refactor preventivo `refactor/creature-factory-foundation`: existe `src/domain/factories/createCreature.js` como factory base para criaturas ECS. `src/game/createPlayer.js` y `src/game/createEnemy.js` conservan sus APIs públicas, pero delegan la construcción común en `createCreature`.
+
+Se aplicó el refactor preventivo `refactor/creature-content-definitions`: las definiciones concretas de criaturas viven ahora en `src/content/creatures`. `humanAdventurer` define la criatura inicial controlada por el jugador y `goblinSkirmisher` define la criatura enemiga inicial controlada por IA. `createPlayer(world)` y `createEnemy(world)` quedan como wrappers temporales de demo que obtienen definiciones desde `creatureRegistry` y llaman a `createCreature`. `Creature.kind` dejó de representar `player`/`enemy` y ahora expresa identidad de criatura mínima: `human` y `goblin`. No se agregaron componentes, sistemas, commands, events ni inventario.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -40,13 +42,9 @@ Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/
 
 `meleeCombatSystem` procesa requests de ataque melee genéricas, inicia `windup` con `startAction`, resuelve impacto al terminar el `windup`, aplica daño mitigado si hay objetivo válido, pasa a `recovery` con `transitionActionPhase` y limpia la acción con `clearAction`.
 
-`spellProjectileFactory` lee el proyectil desde `spellDefinition.effect.projectile`. Firebolt nace desde el centro del actor, viaja hacia el `targetPoint` resuelto al final del windup, usa `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`, y luego queda bajo los sistemas genéricos de proyectiles. El renderable de Firebolt usa `shape: "glyph"` y `glyph: "x"`, aprovechando soporte existente del renderer sin modificar `src/render/*`.
+`spellProjectileFactory` lee el proyectil desde `spellDefinition.effect.projectile`. Firebolt nace desde el centro del actor, viaja hacia el `targetPoint` resuelto al final del windup, usa `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`, y luego queda bajo los sistemas genéricos de proyectiles.
 
-La UI mínima muestra feedback de input dividido en dos hemisferios inferiores: teclado en esquina inferior izquierda y mouse/rueda en esquina inferior derecha. El mouse usa una grilla 3x3 con `LMB`, `RMB`, `M5`, `Wheel` y `M4`; `LMB` y `RMB` tienen tamaño visual amplio, mientras `M4` y `M5` quedan compactos. El indicador externo de rueda con número/dirección queda oculto temporalmente; el botón `Wheel` integrado en la grilla sigue visible y el debug panel sigue mostrando el índice de rueda. El teclado muestra `Tab`, `Q`, `W`, `F`, `A`, `R`, `S` y `Space`. La etiqueta superior `Pausa` solo aparece durante `tacticalPaused`. El debug panel sigue mostrando modo, acción preparada, índice de rueda, último command y estado de acción del jugador. La UI no aplica reglas ni modifica ECS.
-
-La UI tiene una hotbar visual mínima centrada abajo con tres modos visuales: `inventory`, `spells` y `features`. El modo inicial es `inventory`: muestra 10 slots vacíos agrupados de a 2 en 5 pares y la selección visual deriva de `snapshot.input.mouse.wheelIndex` mediante pares `0-1`, `2-3`, `4-5`, `6-7`, `8-9`. Al presionar `Q`, la UI alterna visualmente entre `inventory` y `spells`; al presionar `F`, alterna visualmente entre `inventory` y `features`. Los modos `spells` y `features` muestran los 10 slots vacíos como slots individuales y seleccionan el slot individual `0..9` derivado de `mouse.wheelIndex`. El feedback de selección ahora es crecimiento rápido del par o slot seleccionado, no un marco como señal principal. No existe inventario real, items, spell slots, prepared spells, feats/features reales, `UseFeatureCommand`, uso de objetos ni selección por números todavía.
-
-El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy.timeRemaining` y `ActionEconomy.phaseDuration`; esto no modifica daño, tiempos ni reglas de combate. El cursor custom se posiciona con `left/top` desde JS y mantiene el centrado con CSS.
+La UI mínima muestra feedback de input, cursor custom y hotbar visual mínima. La hotbar visual tiene modos `inventory`, `spells` y `features`, pero todavía no representa inventario real, items, spell slots, prepared spells ni features activables. La UI no aplica reglas ni modifica ECS.
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
@@ -97,12 +95,15 @@ Ninguno.
 
 - `src/content/spells/firebolt.js`: definición mínima data-driven de Firebolt como conjuro con targeting, cast y effect.
 - `src/content/spells/spellRegistry.js`: registry mínimo para obtener definiciones de spell por id.
+- `src/content/creatures/humanAdventurer.js`: definición data-driven mínima de la criatura inicial del jugador.
+- `src/content/creatures/goblinSkirmisher.js`: definición data-driven mínima de la criatura enemiga inicial.
+- `src/content/creatures/creatureRegistry.js`: registry mínimo para obtener definiciones de criatura por id.
 
 ## Factories existentes
 
-- `src/domain/factories/createCreature.js`: factory mínima para crear criaturas ECS con componentes comunes y controles opcionales `PlayerControlled` o `AIControlled`.
-- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)` y delega en `createCreature`.
-- `src/game/createEnemy.js`: wrapper de demo que conserva `createEnemy(world)` y delega en `createCreature`.
+- `src/domain/factories/createCreature.js`: factory mínima para crear criaturas ECS desde una definición de content, con componentes comunes y controles opcionales `PlayerControlled` o `AIControlled`.
+- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature`.
+- `src/game/createEnemy.js`: wrapper de demo que conserva `createEnemy(world)`, obtiene `goblinSkirmisher` desde content y delega en `createCreature`.
 
 ## Reglas puras existentes
 
@@ -115,13 +116,7 @@ Ninguno.
 
 - Input de teclado mínimo para movimiento con WASD y flechas.
 - `keyboardInput`: factory pública que expone `getMovementIntent`, `consumeTacticalToggleIntent` y `getSnapshot`.
-- `keyboardKeyState`: tracking de teclas físicas, teclas visuales y toggle táctico de `Space`.
-- `keyboardSnapshot`: construcción del snapshot visual de teclado para HUD.
-- Input de mouse para acción primaria con click izquierdo y acción secundaria con click derecho, registrado sobre `window` desde app.
 - `mouseInput`: factory pública que expone `consumePrimaryClickIntent`, `consumeSecondaryClickIntent` y `getSnapshot`.
-- `mouseButtonState`: tracking de botones, click primario consumible y click secundario consumible.
-- `mouseWheelState`: tracking de rueda, índice circular `0..9`, dirección y pulso.
-- `mousePointerState`: tracking de posición del puntero.
 - Input no modifica ECS ni componentes.
 - Input no aplica daño.
 - Input no crea proyectiles.
@@ -130,21 +125,10 @@ Ninguno.
 
 - `hudUi`: orquesta nodos DOM del HUD y delega layout/update en módulos específicos.
 - `hudLayout`: contiene template/configuración del HUD de teclado, mouse, rueda, pausa, cursor custom, hotbar visual y debug panel.
-- `hudUpdate`: contiene helpers para actualizar key caps, mouse caps, feedback de rueda, estado táctico, cursor custom, anillo radial de acción y hotbar visual.
+- `hudUpdate`: contiene helpers para actualizar feedback visual, cursor custom, anillo radial de acción y hotbar visual.
 - `quickBarViewState`: contiene estado visual de UI para alternar hotbar entre `inventory`, `spells` y `features` con `Q`/`F` por flanco de presión.
 - `buildUiSnapshot`: construye un snapshot simple para UI con input, estado táctico, último command, estado de acción del jugador, duración de fase y progreso de fase usando `ActionEconomy.phaseDuration`.
 - La UI no modifica ECS ni llama sistemas de simulation.
-
-## CSS existente
-
-- `style.css`: entrypoint de estilos con imports modulares.
-- `src/ui/styles/base.css`: base global, fuente, colores raíz y cursor nativo oculto.
-- `src/ui/styles/canvas.css`: canvas fullscreen y raíz de UI.
-- `src/ui/styles/cursor.css`: cursor custom y anillo radial de acción.
-- `src/ui/styles/tacticalStatus.css`: etiqueta visual de pausa táctica.
-- `src/ui/styles/quickBar.css`: hotbar visual mínima, modos visuales `inventory`/`spells`/`features` y feedback de selección por crecimiento.
-- `src/ui/styles/inputHud.css`: HUD de teclado, mouse, rueda y key caps.
-- `src/ui/styles/debugPanel.css`: panel de debug.
 
 ## App helpers existentes
 
@@ -170,6 +154,9 @@ Ninguno.
 - `src/domain/rules/actionEconomyRules.js`
 - `src/content/spells/firebolt.js`
 - `src/content/spells/spellRegistry.js`
+- `src/content/creatures/humanAdventurer.js`
+- `src/content/creatures/goblinSkirmisher.js`
+- `src/content/creatures/creatureRegistry.js`
 - `src/game/createPlayer.js`
 - `src/game/createEnemy.js`
 - `src/game/playerQueries.js`
@@ -203,13 +190,6 @@ Ninguno.
 - `src/ui/hudLayout.js`
 - `src/ui/hudUpdate.js`
 - `src/ui/quickBarViewState.js`
-- `src/ui/styles/base.css`
-- `src/ui/styles/canvas.css`
-- `src/ui/styles/cursor.css`
-- `src/ui/styles/tacticalStatus.css`
-- `src/ui/styles/quickBar.css`
-- `src/ui/styles/inputHud.css`
-- `src/ui/styles/debugPanel.css`
 - `src/render/canvasRenderer.js`
 - `src/render/drawMap.js`
 - `src/render/drawEntities.js`
@@ -224,7 +204,7 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 - Firebolt por `RMB` usa `ActionEconomy`, pero no tiene spell slots, recursos ni cooldown visual.
 - `spellCastSystem` todavía concentra varias responsabilidades: actualización de target, validación de spell, resolución de fase y resolución de efecto. No partir todavía salvo que aparezca un segundo spell o segundo effect type, o que el archivo siga creciendo.
-- `createCreature` todavía recibe definiciones inline desde wrappers de demo; no existe registry data-driven de criaturas y no debe agregarse sin scope.
+- `createCreature` todavía recibe definiciones con estructura mínima; no existe sistema de species/archetype/progression y no debe agregarse sin scope.
 - Inventory todavía no existe; cuando se agregue, debe ser trait ECS reutilizable para criaturas/contenedores.
 - La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
@@ -235,55 +215,38 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 - No existe event bus ni events.
 - `createGameApp` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación.
 - La hotbar visual deriva selección desde `wheelIndex`; es una solución provisional de UI, no una fuente de verdad de inventario, spellcasting ni features activables.
-- El modo visual `spells` no representa spell slots, prepared spells ni capacidad de elegir spell.
-- El modo visual `features` no representa feats/features reales, recursos, cooldowns ni capacidad de activar habilidades.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
 - Pedir a la IA implementaciones grandes sin scope.
 
 ## Decisiones recientes
 
-- Se agregó `src/domain/factories/createCreature.js`.
-- `createCreature(world, definition)` centraliza la construcción común de criaturas ECS.
-- `createCreature` agrega componentes comunes de criatura y controles opcionales `PlayerControlled` o `AIControlled` según definición.
-- `createPlayer(world)` conserva su API pública y delega en `createCreature`.
-- `createEnemy(world)` conserva su API pública y delega en `createCreature`.
-- Player queda modelado como `Creature + PlayerControlled`.
-- Enemy queda modelado como `Creature + AIControlled`.
+- Se agregó `src/content/creatures/humanAdventurer.js`.
+- Se agregó `src/content/creatures/goblinSkirmisher.js`.
+- Se agregó `src/content/creatures/creatureRegistry.js`.
+- `createPlayer(world)` conserva su API pública y obtiene `humanAdventurer` desde content.
+- `createEnemy(world)` conserva su API pública y obtiene `goblinSkirmisher` desde content.
+- `Creature.kind` ya no usa `player`/`enemy`; usa `human`/`goblin` porque la búsqueda no encontró reglas dependiendo de esos valores.
+- Content define qué criatura existe; `createCreature` materializa ECS.
+- `creatureRegistry` solo devuelve definiciones; no crea entidades.
+- No se modificó `createCreature`.
 - No se agregó `Inventory` en este scope.
 - No se modificó `createGameApp`.
 - No se agregaron componentes, sistemas, commands ni events.
+- Se agregó `src/domain/factories/createCreature.js`.
+- `createCreature(world, definition)` centraliza la construcción común de criaturas ECS.
+- `createCreature` agrega componentes comunes de criatura y controles opcionales `PlayerControlled` o `AIControlled` según definición.
+- Player queda modelado como `Creature + PlayerControlled`.
+- Enemy queda modelado como `Creature + AIControlled`.
 - Se agregó `src/domain/rules/actionEconomyRules.js`.
 - `canStartAction(actionEconomy)` centraliza la validación mínima para iniciar una acción.
 - `startAction(actionEconomy, { currentAction, phase, duration, pendingAttack?, pendingSpell? })` centraliza inicio de fase, timer, duración normalizada y pending payload.
 - `transitionActionPhase(actionEconomy, { phase, duration })` centraliza cambios de fase con `timeRemaining` y `phaseDuration`.
 - `clearAction(actionEconomy)` centraliza limpieza de `currentAction`, `phase`, `timeRemaining`, `phaseDuration`, `pendingAttack` y `pendingSpell`.
-- `meleeCombatSystem` ya no tiene helper local de limpieza ni setea manualmente los campos comunes de inicio/transición.
-- `spellCastSystem` ya no tiene helper local de limpieza ni setea manualmente los campos comunes de inicio/transición.
-- Se mantiene `pendingAttack` y `pendingSpell`; no se creó `pendingAction` todavía.
 - Firebolt puede reapuntar durante windup usando `aimIntent`.
-- `createGameApp` crea un `aimIntent` por frame desde el snapshot del mouse y lo pasa a simulation.
-- `runSimulationStep` acepta `aimIntent` y lo entrega a `spellCastSystem`.
-- `spellCastSystem` actualiza `pendingSpell.targetPoint` durante `windup` con el último `aimIntent.targetPoint` válido.
-- El proyectil de Firebolt se crea al terminar el windup hacia el último target válido, no necesariamente hacia la posición del click derecho inicial.
-- `CastCommand` conserva el target del click inicial como `initialTargetPoint`.
 - Simulation no lee mouse físico, DOM ni UI para reapuntar.
-- `ActionEconomy` tiene `phaseDuration` como contrato genérico de duración de fase activa.
-- `buildUiSnapshot` calcula `phaseProgress` usando `ActionEconomy.timeRemaining` y `ActionEconomy.phaseDuration`, sin conocer `AttackProfile`, `pendingAttack` ni `pendingSpell`.
-- El feedback radial queda desacoplado del tipo concreto de acción y puede servir para futuras acciones con windup/recovery.
-- Firebolt usa `cast.windupSeconds = 1.5`.
-- Firebolt usa `cast.recoverySeconds = 3` como recovery global de acción.
-- Firebolt usa `effect.type = "spawnProjectile"`.
-- El proyectil de Firebolt vive bajo `effect.projectile`, no directamente bajo la raíz del spell.
-- El proyectil de Firebolt se representa como glyph `x` color `#ff7a33` con `shape: "glyph"`.
-- `ActionEconomy` acepta `pendingSpell`.
 - Firebolt crea el proyectil al terminar el windup, no al presionar `RMB`.
-- Después de crear el proyectil, Firebolt entra en recovery global de 3 segundos.
 - Durante windup/recovery de Firebolt, melee y nuevos casteos quedan bloqueados por `ActionEconomy.currentAction`.
-- Se eliminó la fixture temporal `createTestProjectile`.
-- `createGameApp` ya no crea proyectiles automáticos al iniciar.
-- La verificación manual de proyectiles se hace casteando Firebolt con `RMB`.
-- Se agregó foundation mínima de proyectiles genéricos ECS.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
