@@ -1,6 +1,7 @@
 import { playerControlSystem } from "./playerControlSystem.js";
 import { aiSystem } from "./aiSystem.js";
 import { movementSystem } from "./movementSystem.js";
+import { spellCastSystem } from "./spellCastSystem.js";
 import { projectileMovementSystem } from "./projectileMovementSystem.js";
 import { projectileImpactSystem } from "./projectileImpactSystem.js";
 import { actionEconomySystem } from "./actionEconomySystem.js";
@@ -22,6 +23,7 @@ export function runSimulationStep({
   playerControlSystem(world, movementIntent);
   aiSystem(world);
   movementSystem(world, tilemap, deltaSeconds);
+  spellCastSystem(world, commands);
   projectileMovementSystem(world, tilemap, deltaSeconds);
   projectileImpactSystem(world);
   actionEconomySystem(world, deltaSeconds);
