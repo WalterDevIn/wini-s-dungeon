@@ -14,15 +14,17 @@ Se aplicó el refactor preventivo `refactor/action-economy-rules`: el protocolo 
 
 Se aplicó el refactor preventivo `refactor/creature-factory-foundation`: existe `src/domain/factories/createCreature.js` como factory base para criaturas ECS. `src/game/createPlayer.js` y `src/game/createEnemy.js` conservan sus APIs públicas, pero delegan la construcción común en `createCreature`.
 
-Se aplicó el refactor preventivo `refactor/creature-content-definitions`: las definiciones concretas de criaturas viven ahora en `src/content/creatures`. `humanAdventurer` define la criatura inicial controlada por el jugador y `goblinSkirmisher` define la criatura enemiga inicial controlada por IA. `createPlayer(world)` y `createEnemy(world)` quedan como wrappers temporales de demo que obtienen definiciones desde `creatureRegistry` y llaman a `createCreature`. `Creature.kind` dejó de representar `player`/`enemy` y ahora expresa identidad de criatura mínima: `human` y `goblin`. No se agregaron componentes, sistemas, commands, events ni inventario.
+Se aplicó el refactor preventivo `refactor/creature-content-definitions`: las definiciones concretas de criaturas viven ahora en `src/content/creatures`. `humanAdventurer` define la criatura inicial controlada por el jugador y `goblinSkirmisher` define la criatura enemiga inicial controlada por IA. `createPlayer(world)` y `createEnemy(world)` quedan como wrappers temporales de demo que obtienen definiciones desde `creatureRegistry` y llaman a `createCreature`. `Creature.kind` dejó de representar `player`/`enemy` y ahora expresa identidad de criatura mínima: `human` y `goblin`.
 
 Se agregó `content/basic-creature-roster-rat-bat-stonecrawler`: existen definiciones de content para `rat`, `bat` y `stoneCrawler`, registradas en `creatureRegistry`.
 
-Se aplicó el refactor preventivo `refactor/creature-position-as-spawn-override`: las definiciones de `src/content/creatures` ya no contienen `position`. La posición ahora es dato de spawn y se pasa a `createCreature(world, definition, { position })`. `createPlayer` conserva la posición inicial `{ x: 96, y: 96 }` sin tocar su wrapper.
+Se aplicó `refactor/creature-position-as-spawn-override`: las definiciones de `src/content/creatures` ya no contienen `position`. La posición ahora es dato de spawn y se pasa a `createCreature(world, definition, { position })`. `createPlayer` conserva la posición inicial `{ x: 96, y: 96 }`.
 
-Se agregó `feature/demo-encounter-spawn-list`: existe `src/game/createDemoEncounter.js` como encounter estático de demo. `createGameApp` ahora crea el jugador y luego llama a `createDemoEncounter(world)` en lugar de crear un único `createEnemy(world)`. El encounter inicial spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas usando `createCreature(world, definition, { position })`. El tilemap estático ahora tiene una sala inicial a la izquierda, una sala de encuentro a la derecha y una conexión caminable entre ambas. No hay dungeon generation procedural, puertas, línea de visión ni sistema dinámico de spawn.
+Se agregó `feature/demo-encounter-spawn-list`: existe `src/game/createDemoEncounter.js` como encounter estático de demo. `createGameApp` crea el jugador y luego llama a `createDemoEncounter(world)` en lugar de crear un único `createEnemy(world)`. El encounter inicial spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas. El tilemap estático tiene sala inicial, sala de encuentro y una conexión caminable. No hay dungeon generation procedural, puertas, línea de visión ni sistema dinámico de spawn.
 
-Se agregó `feature/enemy-action-progress-indicator`: el renderer dibuja indicadores circulares debajo de enemigos con `AIControlled` durante `windup` y `recovery`. El indicador lee `ActionEconomy.timeRemaining`, `phaseDuration` y `phase` desde ECS, usa verde para windup y amarillo para recovery, y es feedback visual solamente. No modifica simulation, reglas, IA, daño ni tiempos.
+Se agregó `feature/enemy-action-progress-indicator`: el renderer dibuja indicadores circulares para enemigos con `AIControlled` durante `windup` y `recovery`. El indicador lee `ActionEconomy.timeRemaining`, `phaseDuration` y `phase` desde ECS, usa verde para windup y amarillo para recovery, y es feedback visual solamente.
+
+Se agregó `feature/player-health-bar-and-grounded-action-indicators`: los indicadores enemigos se corrigieron para quedar centrados en la entidad como círculo de suelo, no literalmente debajo del sprite. La UI muestra una barra de vida read-only sobre la hotbar/inventario, alineada a la izquierda, con un cuadradito por punto de vida máxima del jugador y estado lleno/vacío según `Health.current`. La vida se expone mediante `buildUiSnapshot`; UI no lee ECS directamente fuera del flujo existente. No se modificó simulation ni reglas.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -38,21 +40,13 @@ La pausa táctica vive en app/session, no en ECS ni simulation. Mientras el modo
 
 El juego tiene vida, daño, facciones, criaturas enemigas, muerte/remoción de entidad y combate melee mínimo con fases. El ataque entra en `windup`, luego resuelve impacto contra el estado actual del mundo, y después entra en `recovery`.
 
-Regla actual de ataque melee: un ataque confirmado consume la acción aunque no impacte. El daño solo se aplica si, al terminar el `windup`, existe un objetivo enemigo válido dentro del alcance. Como melee ya ignora nuevos ataques si `ActionEconomy.currentAction` existe, Firebolt bloquea melee durante su windup y recovery global sin tocar lógica especial de melee.
+Los enemigos poseen IA simple con `AIControlled`. Detectan al jugador por facción y distancia, lo persiguen en línea recta y atacan al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador. Durante windup/recovery, el renderer muestra un indicador circular centrado sobre cada enemigo.
 
-Los enemigos poseen IA simple con `AIControlled`. Detectan al jugador por facción y distancia, lo persiguen en línea recta y atacan al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador. Durante windup/recovery, el renderer muestra un indicador circular debajo de cada enemigo.
+Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`. `projectileMovementSystem` mueve proyectiles y los destruye contra tiles sólidos. `projectileImpactSystem` detecta impacto de proyectiles contra criaturas enemigas, filtra por facción y `DefenseProfile.canBeHit`, aplica daño mitigado con `damageRules` y remueve el proyectil si corresponde. `lifetimeSystem` remueve cualquier entidad con `Lifetime` vencido.
 
-Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`. `projectileMovementSystem` mueve proyectiles y los destruye contra tiles sólidos. `projectileImpactSystem` detecta impacto de proyectiles contra criaturas enemigas, filtra por facción y `DefenseProfile.canBeHit`, aplica daño mitigado con `damageRules` y remueve el proyectil si corresponde. `lifetimeSystem` remueve cualquier entidad con `Lifetime` vencido. Ya no existe proyectil automático de prueba al iniciar el juego; la verificación manual de proyectiles se hace casteando Firebolt con `RMB`.
+Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. El proyectil se crea al terminar el windup hacia el último target válido.
 
-Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. La definición incluye `id`, `name`, `kind`, `targeting`, `cast` y `effect`. Su efecto actual es `spawnProjectile`; el proyectil usa `speed: 260`, `size: 10`, `damage: 3`, `lifetimeSeconds: 1.4`, `color: "#ff7a33", glyph: "x", fontSize: 16, destroyOnWall: true y destroyOnHit: true`.
-
-`spellCastSystem` procesa acciones de spell en tres pasos: primero actualiza targets pendientes de spells en windup usando `aimIntent`, luego resuelve acciones de casteo en curso, y después acepta nuevos `CastCommand` solo si el actor tiene `ActionEconomy` disponible mediante `canStartAction`. Al iniciar Firebolt usa `startAction` para guardar `pendingSpell`, poner `currentAction = "spellCast"`, `phase = "windup"`, `timeRemaining = 1.5` y `phaseDuration = 1.5`. Durante windup, `pendingSpell.targetPoint` se actualiza con el último `aimIntent.targetPoint` válido. Al terminar el windup crea el proyectil mediante `spellProjectileFactory` hacia ese último target válido, usa `transitionActionPhase` para pasar a `recovery` por 3 segundos con `phaseDuration = 3`, y luego usa `clearAction`.
-
-`meleeCombatSystem` procesa requests de ataque melee genéricas, inicia `windup` con `startAction`, resuelve impacto al terminar el `windup`, aplica daño mitigado si hay objetivo válido, pasa a `recovery` con `transitionActionPhase` y limpia la acción con `clearAction`.
-
-`spellProjectileFactory` lee el proyectil desde `spellDefinition.effect.projectile`. Firebolt nace desde el centro del actor, viaja hacia el `targetPoint` resuelto al final del windup, usa `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`, y luego queda bajo los sistemas genéricos de proyectiles.
-
-La UI mínima muestra feedback de input, cursor custom y hotbar visual mínima. La hotbar visual tiene modos `inventory`, `spells` y `features`, pero todavía no representa inventario real, items, spell slots, prepared spells ni features activables. La UI no aplica reglas ni modifica ECS.
+La UI mínima muestra feedback de input, cursor custom, hotbar visual mínima y barra de vida del jugador. La hotbar visual tiene modos `inventory`, `spells` y `features`, pero todavía no representa inventario real, items, spell slots, prepared spells ni features activables. La UI no aplica reglas ni modifica ECS.
 
 `main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
@@ -122,7 +116,7 @@ Ninguno.
 - `src/render/canvasRenderer.js`: renderiza mapa, entidades y action indicators.
 - `src/render/drawMap.js`: dibuja el tilemap estático.
 - `src/render/drawEntities.js`: dibuja entidades renderizables.
-- `src/render/drawActionIndicators.js`: dibuja indicadores circulares de progreso bajo enemigos `AIControlled` durante `windup` y `recovery`.
+- `src/render/drawActionIndicators.js`: dibuja indicadores circulares de progreso centrados sobre enemigos `AIControlled` durante `windup` y `recovery`.
 
 ## Reglas puras existentes
 
@@ -143,10 +137,10 @@ Ninguno.
 ## UI existente
 
 - `hudUi`: orquesta nodos DOM del HUD y delega layout/update en módulos específicos.
-- `hudLayout`: contiene template/configuración del HUD de teclado, mouse, rueda, pausa, cursor custom, hotbar visual y debug panel.
-- `hudUpdate`: contiene helpers para actualizar feedback visual, cursor custom, anillo radial de acción y hotbar visual.
+- `hudLayout`: contiene template/configuración del HUD de teclado, mouse, rueda, pausa, cursor custom, hotbar visual, barra de vida y debug panel.
+- `hudUpdate`: contiene helpers para actualizar feedback visual, barra de vida del jugador, cursor custom, anillo radial de acción y hotbar visual.
 - `quickBarViewState`: contiene estado visual de UI para alternar hotbar entre `inventory`, `spells` y `features` con `Q`/`F` por flanco de presión.
-- `buildUiSnapshot`: construye un snapshot simple para UI con input, estado táctico, último command, estado de acción del jugador, duración de fase y progreso de fase usando `ActionEconomy.phaseDuration`.
+- `buildUiSnapshot`: construye un snapshot simple para UI con input, estado táctico, último command, estado de acción del jugador, vida del jugador, duración de fase y progreso de fase usando `ActionEconomy.phaseDuration`.
 - La UI no modifica ECS ni llama sistemas de simulation.
 
 ## App helpers existentes
@@ -247,13 +241,13 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
-- Se agregó `src/render/drawActionIndicators.js`.
-- `canvasRenderer` ahora llama `drawActionIndicators` después de `drawEntities`.
-- Los indicadores de acción se dibujan solo para entidades con `AIControlled`, `Position`, `Renderable` y `ActionEconomy`.
-- Los indicadores aparecen solo durante `windup` o `recovery`.
-- Windup usa verde `#00ff66`; recovery usa amarillo `#ffcc33`.
-- El progreso visual usa `1 - timeRemaining / phaseDuration` con clamp `0..1`.
-- Esta feature es solo feedback visual en render; no modifica simulation, reglas, IA, daño, tiempos, UI, input ni CSS.
+- Se corrigió `drawActionIndicators` para centrar el ring enemigo sobre la entidad usando `renderable.height * 0.58`.
+- `buildUiSnapshot` ahora expone `playerHealth` leyendo `Health` del jugador.
+- `hudLayout` agregó `data-player-health-bar` sobre la hotbar.
+- `hudUi` recolecta `playerHealthBar` y llama `updatePlayerHealthBar`.
+- `hudUpdate` renderiza un cuadradito por punto de vida máxima y marca llenos según vida actual.
+- `quickBar.css` contiene estilos de barra de vida y pips lleno/vacío.
+- La barra de vida es UI read-only desde snapshot; no modifica ECS ni simulation.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
