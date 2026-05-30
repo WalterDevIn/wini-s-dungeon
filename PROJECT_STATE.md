@@ -26,7 +26,7 @@ Regla actual de ataque melee: un ataque confirmado consume la acción aunque no 
 
 El enemigo posee IA simple con `AIControlled`. Detecta al jugador por facción y distancia, lo persigue en línea recta y ataca al entrar en rango melee usando la misma estructura de `ActionEconomy`, `AttackProfile`, `windup` y `recovery` que el jugador.
 
-Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`. `projectileMovementSystem` mueve proyectiles y los destruye contra tiles sólidos. `projectileImpactSystem` detecta impacto contra criaturas enemigas, filtra por facción y `DefenseProfile.canBeHit`, aplica daño mitigado con `damageRules` y remueve el proyectil si corresponde. `lifetimeSystem` remueve cualquier entidad con `Lifetime` vencido. Existe un proyectil de prueba temporal creado en `createGameApp` mediante `createTestProjectile` para verificar la infraestructura al iniciar el juego.
+Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`. `projectileMovementSystem` mueve proyectiles y los destruye contra tiles sólidos. `projectileImpactSystem` detecta impacto contra criaturas enemigas, filtra por facción y `DefenseProfile.canBeHit`, aplica daño mitigado con `damageRules` y remueve el proyectil si corresponde. `lifetimeSystem` remueve cualquier entidad con `Lifetime` vencido. Ya no existe proyectil automático de prueba al iniciar el juego; la verificación manual de proyectiles se hace casteando Firebolt con `RMB`.
 
 Firebolt está definido de forma mínima y data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. `spellCastSystem` procesa commands de tipo `Cast`, obtiene la definición desde el registry y delega la creación del proyectil en `spellProjectileFactory`. Firebolt nace desde el centro del actor, viaja hacia el `targetPoint` del command, usa `Projectile`, `Lifetime`, `DamageOnHit`, `Position`, `Velocity`, `Collider`, `Renderable` y `Faction`, y luego queda bajo los sistemas genéricos de proyectiles.
 
@@ -36,7 +36,7 @@ La UI tiene una hotbar visual mínima centrada abajo con tres modos visuales: `i
 
 El cursor nativo está oculto sobre el juego y la UI muestra un cursor custom tipo `+` como overlay DOM. Durante `windup` y `recovery`, la UI muestra un anillo radial alrededor del cursor usando el progreso derivado de `ActionEconomy` y `AttackProfile`; esto no modifica daño, tiempos ni reglas de combate. El cursor custom se posiciona con `left/top` desde JS y mantiene el centrado con CSS.
 
-`main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`. `createGameApp` también crea un proyectil de prueba temporal para validar la foundation de proyectiles.
+`main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
 El input de mouse se registra sobre `window` desde `createGameApp` para que el cursor custom, feedback de botones, wheel y clicks sigan respondiendo aunque el overlay/UI o el escalado visual del canvas interfieran con eventos directos sobre el canvas.
 
@@ -139,7 +139,7 @@ Ninguno.
 
 ## App helpers existentes
 
-- `createGameApp`: coordina creación de mundo, input, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico, proyectil de prueba temporal y snapshot UI.
+- `createGameApp`: coordina creación de mundo, input, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico y snapshot UI.
 - `commandMapper`: convierte input de app en commands mínimos; actualmente `LMB` produce `AttackCommand` y `RMB` produce `CastCommand` de Firebolt si hay puntero válido.
 - `tacticalModeController`: mantiene modo `running`/`tacticalPaused`, command pendiente y liberación del command al despausar.
 
@@ -161,7 +161,6 @@ Ninguno.
 - `src/content/spells/spellRegistry.js`
 - `src/game/createPlayer.js`
 - `src/game/createEnemy.js`
-- `src/game/createTestProjectile.js`
 - `src/game/playerQueries.js`
 - `src/game/buildUiSnapshot.js`
 - `src/input/keyboardInput.js`
@@ -206,12 +205,11 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone 6 siguiente scope: retirar o reemplazar `createTestProjectile` y decidir si Firebolt debe integrarse con economía de acción/cooldown, pausa táctica o hotbar visual. Hacerlo en scopes separados.
+Milestone 6 siguiente scope: decidir si Firebolt debe integrarse con economía de acción/cooldown, pausa táctica o hotbar visual. Hacerlo en scopes separados.
 
 ## Riesgos actuales
 
 - Firebolt por `RMB` ignora `ActionEconomy`, recursos y cooldowns; es una decisión temporal de Milestone 6 mínimo.
-- El proyectil de prueba temporal existe solo para validar infraestructura; debe eliminarse o reemplazarse ahora que Firebolt crea proyectiles reales.
 - La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
@@ -229,6 +227,9 @@ Milestone 6 siguiente scope: retirar o reemplazar `createTestProjectile` y decid
 
 ## Decisiones recientes
 
+- Se eliminó la fixture temporal `createTestProjectile`.
+- `createGameApp` ya no crea proyectiles automáticos al iniciar.
+- La verificación manual de proyectiles ahora se hace casteando Firebolt con `RMB`.
 - Se agregó Firebolt mínimo por botón derecho mediante `CastCommand`.
 - Se agregó `CommandType.Cast` y `CastCommand`.
 - Se agregó intent secundario consumible de mouse para `RMB`.
@@ -247,7 +248,6 @@ Milestone 6 siguiente scope: retirar o reemplazar `createTestProjectile` y decid
 - Se agregó `lifetimeSystem` genérico para remover entidades con lifetime vencido.
 - Se agregó `projectileHitDetection` como helper de detección de targets válidos por facción, `DefenseProfile` y overlap de rectángulos.
 - Se agregó `rectsOverlap` a `geometryRules` como regla pura compartida.
-- Se agregó `createTestProjectile` como fixture temporal de verificación creada desde `createGameApp`.
 - Se agregó modo visual `features` a la hotbar: `F` alterna entre `features` e `inventory` dentro de UI.
 - La hotbar visual ahora tiene tres modos: `inventory`, `spells` y `features`.
 - `Q` alterna entre `spells` e `inventory`; si la hotbar está en `features`, `Q` cambia a `spells`.
