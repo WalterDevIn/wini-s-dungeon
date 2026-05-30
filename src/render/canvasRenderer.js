@@ -1,3 +1,4 @@
+import { drawActionIndicators } from "./drawActionIndicators.js";
 import { drawEntities } from "./drawEntities.js";
 import { drawMap } from "./drawMap.js";
 
@@ -27,6 +28,7 @@ export function createCanvasRenderer(canvas, context) {
     clearFrame();
     drawMap(context, tilemap, pixelRatio);
     drawEntities(context, world, pixelRatio);
+    drawActionIndicators(context, world, pixelRatio);
   }
 
   return {
