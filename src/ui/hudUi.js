@@ -1,4 +1,5 @@
 import { renderHudTemplate } from "./hudLayout.js";
+import { createQuickBarViewState } from "./quickBarViewState.js";
 import {
   updateCursorFeedback,
   updateKeyboardCaps,
@@ -13,11 +14,19 @@ export function createHudUi(root) {
   root.innerHTML = renderHudTemplate();
 
   const elements = collectHudElements(root);
+  const quickBarViewState = createQuickBarViewState();
 
   function update(snapshot) {
+    quickBarViewState.updateFromKeyboard(snapshot.input.keyboard);
+
     updateKeyboardCaps(elements.keyCaps, snapshot.input.keyboard);
     updateMouseCaps(elements.mouseCaps, snapshot.input.mouse);
-    updateQuickBar(elements.quickBarPairs, snapshot.input.mouse);
+    updateQuickBar(
+      elements.quickBar,
+      elements.quickBarPairs,
+      snapshot.input.mouse,
+      quickBarViewState.getSnapshot(),
+    );
     updateWheelFeedback(
       elements.wheelFeedback,
       elements.wheelDirection,
@@ -38,6 +47,7 @@ function collectHudElements(root) {
   return {
     keyCaps: collectElementsByDataAttribute(root, "keyCode", "[data-key-code]"),
     mouseCaps: collectElementsByDataAttribute(root, "mouseCode", "[data-mouse-code]"),
+    quickBar: root.querySelector("[data-quick-bar]"),
     quickBarPairs: [...root.querySelectorAll("[data-quick-bar-pair]")],
     cursorFeedback: {
       root: root.querySelector("[data-cursor-feedback]"),
