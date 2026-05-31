@@ -26,9 +26,11 @@ Se agregó `feature/enemy-action-progress-indicator`: el renderer dibuja indicad
 
 Se agregó `feature/player-health-bar-and-grounded-action-indicators`: los indicadores enemigos se corrigieron para quedar centrados en la entidad como círculo de suelo, no literalmente debajo del sprite. La UI muestra una barra de vida read-only sobre la hotbar/inventario, alineada a la izquierda, con un cuadradito por punto de vida máxima del jugador y estado lleno/vacío según `Health.current`. La vida se expone mediante `buildUiSnapshot`; UI no lee ECS directamente fuera del flujo existente. No se modificó simulation ni reglas.
 
-Se agregó `feature/expanded-static-palace-like-tilemap`: `src/world/tilemap.js` ahora contiene un mapa estático más grande, inspirado en una planta palacial, con sala central amplia, habitaciones pegadas, corredores principales de 2 tiles y algunos pasillos estrechos de 1 tile. `createPlayer` reubica el spawn inicial en el sector inferior del mapa y `createDemoEncounter` distribuye `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` en zonas caminables separadas. No se implementaron chunks, generación procedural, puertas, cámara, línea de visión ni nuevos símbolos de tile.
+Se agregó `feature/expanded-static-palace-like-tilemap`: `src/world/tilemap.js` pasó a tener un mapa estático más grande, inspirado en una planta palacial. Esta versión fue reemplazada después por una traducción manual más fiel al plano de Néstor.
 
 Se agregó `feature/player-mouse-midpoint-camera`: existe `src/render/camera.js` con helpers puros para crear un snapshot de cámara, convertir coordenadas mundo/pantalla y clamppear el viewport contra el tilemap. `createGameApp` calcula la cámara cada frame usando el centro del jugador, el puntero físico y el viewport. El renderer dibuja mapa, entidades e indicadores usando offset de cámara. Los targets de Firebolt y `aimIntent` se convierten de coordenadas de pantalla a coordenadas de mundo antes de entrar a commands/simulation. No se implementaron smoothing, zoom, shake, minimap, chunks, línea de visión ni cambios de simulación.
+
+Se agregó `feature/nestor-palace-like-static-tilemap`: `src/world/tilemap.js` ahora contiene una traducción manual más fiel al plano adjunto del palacio de Néstor/Pilos. El mapa usa un blueprint ASCII rectangular de 48x28 tiles, solo con `#` y `.`, con bloque superior de cuartos, sala central amplia, ala izquierda de habitaciones pequeñas, ala derecha de salas y corredores, pasillos estrechos, corredores de 2 tiles y un sector inferior de entrada/antecámaras. `createPlayer` y `createDemoEncounter` fueron reubicados en posiciones caminables. Siguen fuera de scope puertas, línea de visión, generación procedural, chunks, pathfinding, tiles decorativos y cambios de cámara.
 
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
@@ -111,9 +113,9 @@ Ninguno.
 ## Factories existentes
 
 - `src/domain/factories/createCreature.js`: factory mínima para crear criaturas ECS desde una definición de content y datos de spawn explícitos, actualmente `position`, con componentes comunes y controles opcionales `PlayerControlled` o `AIControlled`.
-- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature` con posición inicial `{ x: 480, y: 624 }`.
+- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature` con posición inicial `{ x: 1056, y: 1152 }`.
 - `src/game/createEnemy.js`: wrapper legacy/demo que conserva `createEnemy(world)`, obtiene `goblinSkirmisher` desde content y delega en `createCreature` con posición inicial `{ x: 240, y: 192 }`, pero el arranque actual usa `createDemoEncounter` en su lugar.
-- `src/game/createDemoEncounter.js`: encounter estático de demo que spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas adaptadas al mapa estático expandido.
+- `src/game/createDemoEncounter.js`: encounter estático de demo que spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas adaptadas al mapa tipo palacio de Néstor.
 
 ## Render existente
 
@@ -221,20 +223,21 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone Pre-7 siguiente scope recomendado: validar cámara + encounter estático expandido y luego elegir entre `feature/inventory-trait-foundation` o Milestone 7 `doors-and-vision`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador.
+Milestone Pre-7 siguiente scope recomendado: validar cámara + mapa tipo palacio de Néstor y luego elegir entre `feature/inventory-trait-foundation` o Milestone 7 `doors-and-vision`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador.
 
 Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reutilizar `actionEconomyRules` en lugar de duplicar protocolo de `ActionEconomy` dentro de cada sistema.
 
 ## Riesgos actuales
 
 - La cámara no tiene smoothing, zoom ni tratamiento especial para mapas más pequeños que el viewport; es una cámara mínima determinista.
+- El mapa tipo palacio es una traducción manual usando solo `#` y `.`, por lo que no expresa puertas, columnas, números, círculo central ni decoraciones del plano original.
+- La IA persigue en línea recta y no tiene pathfinding; algunas salas laterales pueden ser poco útiles para enemigos hasta Milestone 7+ o pathfinding futuro.
 - Firebolt por `RMB` usa `ActionEconomy`, pero no tiene spell slots, recursos ni cooldown visual.
 - `spellCastSystem` todavía concentra varias responsabilidades: actualización de target, validación de spell, resolución de fase y resolución de efecto. No partir todavía salvo que aparezca un segundo spell o segundo effect type, o que el archivo siga creciendo.
 - `createCreature` todavía recibe definiciones con estructura mínima; no existe sistema de species/archetype/progression y no debe agregarse sin scope.
 - `createDemoEncounter` es un encounter estático de demo, no un sistema de spawn dinámico ni generación de mazmorra.
 - El tilemap nuevo es estático y manual; no hay `mapGeneration`, `rooms`, puertas ni línea de visión.
 - Inventory todavía no existe; cuando se agregue, debe ser trait ECS reutilizable para criaturas/contenedores.
-- La IA persigue en línea recta y no tiene pathfinding.
 - La IA detecta por distancia y facción, no por línea de visión.
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
 - El click izquierdo queda definido como acción primaria del modo de juego; cuando exista inventario/UI interactiva, la capa app/UI deberá poder capturar clicks para no enviarlos como comandos de combate.
@@ -249,16 +252,17 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
+- Se reemplazó el tilemap anterior por un blueprint estático manual de 48x28 tiles mucho más parecido al plano adjunto del palacio de Néstor/Pilos.
+- El nuevo mapa mantiene solo `#` para sólido y `.` para caminable, sin puertas, símbolos decorativos, columnas ni props.
+- `createPlayer` ahora posiciona al jugador en `{ x: 1056, y: 1152 }`, en el sector inferior del mapa.
+- `createDemoEncounter` reubicó `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` en posiciones caminables dentro del mapa tipo palacio.
+- No se tocaron app, input, UI, simulation, domain, render, ECS ni content para este cambio de mapa.
 - Se agregó `src/render/camera.js` para calcular cámara mínima centrada entre jugador y mouse, con conversión `worldToScreen` / `screenToWorld` y clamp contra tilemap.
 - `createGameApp` calcula un snapshot de cámara por frame y usa ese snapshot tanto para render como para convertir targets del mouse a coordenadas de mundo.
 - `commandMapper` recibe `mouseSnapshot` y una función `screenToWorldPoint` desde app para construir `CastCommand` con target de mundo.
 - `createAimIntent` ahora convierte el puntero físico a coordenadas de mundo antes de pasarlo a simulation.
 - `canvasRenderer`, `drawMap`, `drawEntities` y `drawActionIndicators` aplican offset de cámara solo al dibujar.
 - No se agregaron smoothing, zoom, shake, minimap, chunks, línea de visión, componentes, sistemas, commands ni events.
-- Se reemplazó el tilemap de demo por una planta estática expandida de 24x15 tiles, con sala central, habitaciones laterales pegadas, corredores de 2 tiles y pasillos de 1 tile.
-- `createPlayer` ahora posiciona al jugador en `{ x: 480, y: 624 }`, dentro de una zona caminable del sector inferior.
-- `createDemoEncounter` reubicó `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` en posiciones caminables separadas del mapa expandido.
-- No se agregaron chunks, generación procedural, puertas, cámara, línea de visión, nuevos símbolos de tile, componentes, sistemas, commands ni events.
 - Se corrigió `drawActionIndicators` para centrar el ring enemigo sobre la entidad usando `renderable.height * 0.58`.
 - `buildUiSnapshot` ahora expone `playerHealth` leyendo `Health` del jugador.
 - `hudLayout` agregó `data-player-health-bar` sobre la hotbar.
