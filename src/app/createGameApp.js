@@ -2,6 +2,7 @@ import { createWorld, getComponent } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
 import { createDemoEncounter } from "../game/createDemoEncounter.js";
 import { createPlayer } from "../game/createPlayer.js";
+import { buildRenderSnapshot } from "../game/buildRenderSnapshot.js";
 import { buildUiSnapshot } from "../game/buildUiSnapshot.js";
 import { findPlayerEntity } from "../game/playerQueries.js";
 import { createKeyboardInput } from "../input/keyboardInput.js";
@@ -78,7 +79,7 @@ export function createGameApp({ canvas, context, uiRoot }) {
       });
     }
 
-    renderer.render(world, tilemap, camera);
+    renderer.render(buildRenderSnapshot({ world, tilemap, camera }));
     hudUi.update(
       buildUiSnapshot({
         world,
