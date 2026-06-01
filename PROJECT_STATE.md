@@ -34,6 +34,8 @@ Se agregó `feature/nestor-palace-like-static-tilemap`: `src/world/tilemap.js` a
 
 Se aplicó `refactor/render-snapshot-boundary`: existe `src/game/buildRenderSnapshot.js` como traductor ECS -> datos de render. `createGameApp` construye un render snapshot por frame y `canvasRenderer`, `drawEntities` y `drawActionIndicators` ya no reciben ni consultan `world` directamente. Render conserva solo dibujo, cámara visual, colores y geometría.
 
+Se aplicó `refactor/app-frame-boundary-and-player-query-cleanup`: `createGameApp` quedó como bootstrap y loop mínimo. La ejecución de cada frame vive en `src/app/gameFrame.js`, `aimIntent` se construye en `src/app/aimIntent.js` como intent abstracto frame-local, y el centro del jugador se obtiene desde `src/game/playerQueries.js` mediante `getPlayerCenterPoint(world)`. No se creó todavía una capa formal `domain/intents.js`.
+
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
@@ -42,7 +44,7 @@ El jugador ataca con click izquierdo mediante un `AttackCommand` mínimo. En mod
 
 El botón derecho del mouse genera un `CastCommand` mínimo para `firebolt` solo en modo running. `commandMapper` convierte la posición física del puntero a coordenadas de mundo mediante la cámara antes de guardarla como `initialTargetPoint`; input no crea proyectiles y app no crea proyectiles.
 
-`createGameApp` construye un `aimIntent` abstracto por frame desde `mouseInput.getSnapshot().pointer`, lo convierte a coordenadas de mundo con la cámara y lo pasa a `runSimulationStep`. Simulation consume ese intent sin leer mouse físico, DOM ni UI.
+`gameFrame` construye un `aimIntent` abstracto por frame desde `mouseInput.getSnapshot().pointer`, lo convierte a coordenadas de mundo con la cámara y lo pasa a `runSimulationStep`. Simulation consume ese intent sin leer mouse físico, DOM ni UI.
 
 La pausa táctica vive en app/session, no en ECS ni simulation. Mientras el modo táctico está pausado, `runSimulationStep` no se llama; render y HUD siguen actualizándose.
 
@@ -56,7 +58,7 @@ Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/
 
 La UI mínima muestra feedback de input, cursor custom, hotbar visual mínima y barra de vida del jugador. La hotbar visual tiene modos `inventory`, `spells` y `features`, pero todavía no representa inventario real, items, spell slots, prepared spells ni features activables. La UI no aplica reglas ni modifica ECS.
 
-`main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, cámara, renderer, UI, loop, simulation, render y snapshot vive en `createGameApp`. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
+`main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, cámara, renderer, UI, loop, simulation, render snapshot y snapshot UI se divide entre `createGameApp` como composition root y `gameFrame` como ejecutor de frame. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
 ## Sistemas existentes
 
@@ -156,9 +158,15 @@ Ninguno.
 
 ## App helpers existentes
 
-- `createGameApp`: coordina creación de mundo, input, cámara, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico, `aimIntent`, render snapshot y snapshot UI. Crea el jugador y el encounter estático de demo.
+- `createGameApp`: composition root; crea mundo, input, renderer, UI, tactical mode, entidades iniciales, estado mínimo de frame y arranca el loop.
+- `gameFrame`: ejecuta la coordinación de un frame con dependencias inyectadas: input snapshot, cámara, commands, simulation, render snapshot y UI snapshot.
+- `aimIntent`: construye el intent abstracto frame-local de apuntado desde `mouseSnapshot` y una función de conversión pantalla -> mundo. No existe todavía `domain/intents.js`.
 - `commandMapper`: convierte input de app en commands mínimos; actualmente `LMB` produce `AttackCommand` y `RMB` produce `CastCommand` de Firebolt si hay puntero válido. El target de Firebolt se recibe ya convertido a coordenadas de mundo mediante una función provista por app.
 - `tacticalModeController`: mantiene modo `running`/`tacticalPaused`, command pendiente y liberación del command al despausar.
+
+## Game queries existentes
+
+- `playerQueries`: contiene queries read-only del jugador. Expone `findPlayerEntity(world)` y `getPlayerCenterPoint(world)`.
 
 ## Archivos de aplicación existentes
 
@@ -166,6 +174,8 @@ Ninguno.
 - `style.css`
 - `src/app/main.js`
 - `src/app/createGameApp.js`
+- `src/app/gameFrame.js`
+- `src/app/aimIntent.js`
 - `src/app/commandMapper.js`
 - `src/app/tacticalModeController.js`
 - `src/ecs/world.js`
@@ -248,7 +258,7 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 - `movementIntent` sigue entrando crudo a `runSimulationStep`; es deuda aceptada para movimiento continuo y no debe confundirse con un flujo totalmente command-driven.
 - No existe command buffer; solo hay command mínimo directo por frame y un command táctico pendiente máximo en app/session.
 - No existe event bus ni events.
-- `createGameApp` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación.
+- `gameFrame` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación sin devolver lógica a `createGameApp`.
 - La hotbar visual deriva selección desde `wheelIndex`; es una solución provisional de UI, no una fuente de verdad de inventario, spellcasting ni features activables.
 - Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
@@ -256,6 +266,11 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
+- Se aplicó `refactor/app-frame-boundary-and-player-query-cleanup`: `createGameApp` quedó como composition root y loop mínimo.
+- `src/app/gameFrame.js` ejecuta el frame con dependencias inyectadas y preserva el orden previo de input, cámara, commands, simulation, render y UI.
+- `src/app/aimIntent.js` construye `aimIntent` como intent abstracto frame-local desde `mouseSnapshot` y `screenToWorldPoint`.
+- `src/game/playerQueries.js` ahora expone `getPlayerCenterPoint(world)` como query read-only del centro del jugador.
+- No se creó `src/domain/intents.js`; la formalización general de intents queda postergada hasta que existan más intents abstractos.
 - Se aplicó `refactor/render-snapshot-boundary`: `src/game/buildRenderSnapshot.js` construye datos planos para render desde ECS, incluyendo entidades renderizables e indicadores de acción.
 - `createGameApp` ahora construye un render snapshot por frame y llama `renderer.render(renderSnapshot)`.
 - `canvasRenderer` consume `renderSnapshot` y ya no recibe `world`.
