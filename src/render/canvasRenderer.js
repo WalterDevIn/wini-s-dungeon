@@ -32,14 +32,19 @@ export function createCanvasRenderer(canvas, context) {
     };
   }
 
-  function render(world, tilemap, camera) {
+  function render(renderSnapshot) {
     const pixelRatio = window.devicePixelRatio || 1;
 
     resizeCanvas();
     clearFrame();
-    drawMap(context, tilemap, pixelRatio, camera);
-    drawEntities(context, world, pixelRatio, camera);
-    drawActionIndicators(context, world, pixelRatio, camera);
+    drawMap(context, renderSnapshot.tilemap, pixelRatio, renderSnapshot.camera);
+    drawEntities(context, renderSnapshot.entities, pixelRatio, renderSnapshot.camera);
+    drawActionIndicators(
+      context,
+      renderSnapshot.actionIndicators,
+      pixelRatio,
+      renderSnapshot.camera,
+    );
   }
 
   return {
