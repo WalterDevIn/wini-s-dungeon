@@ -1,9 +1,6 @@
-import { getComponent, queryEntities } from "../ecs/world.js";
-import { ComponentType } from "../domain/components.js";
 import { worldToScreen } from "./camera.js";
 
 const WINDUP_PHASE = "windup";
-const RECOVERY_PHASE = "recovery";
 const WINDUP_COLOR = "#00ff66";
 const RECOVERY_COLOR = "#ffcc33";
 const BASE_RING_COLOR = "rgba(244, 241, 232, 0.16)";
@@ -13,42 +10,18 @@ const INDICATOR_RADIUS = 9;
 const INDICATOR_LINE_WIDTH = 3;
 const START_ANGLE = -Math.PI / 2;
 
-export function drawActionIndicators(context, world, pixelRatio, camera) {
-  const actionEntities = queryEntities(world, [
-    ComponentType.Position,
-    ComponentType.Renderable,
-    ComponentType.ActionEconomy,
-    ComponentType.AIControlled,
-  ]);
-
-  for (const entityId of actionEntities) {
-    const actionEconomy = getComponent(world, entityId, ComponentType.ActionEconomy);
-
-    if (!shouldDrawActionIndicator(actionEconomy)) {
-      continue;
-    }
-
-    const position = getComponent(world, entityId, ComponentType.Position);
-    const renderable = getComponent(world, entityId, ComponentType.Renderable);
-    const phaseProgress = getActionPhaseProgress(
-      actionEconomy.timeRemaining,
-      actionEconomy.phaseDuration,
-    );
-
+export function drawActionIndicators(context, actionIndicators, pixelRatio, camera) {
+  for (const actionIndicator of actionIndicators) {
     drawActionIndicator({
       context,
-      position,
-      renderable,
-      phase: actionEconomy.phase,
-      phaseProgress,
+      position: actionIndicator.position,
+      renderable: actionIndicator.renderable,
+      phase: actionIndicator.phase,
+      phaseProgress: actionIndicator.phaseProgress,
       pixelRatio,
       camera,
     });
   }
-}
-
-function shouldDrawActionIndicator(actionEconomy) {
-  return actionEconomy.phase === WINDUP_PHASE || actionEconomy.phase === RECOVERY_PHASE;
 }
 
 function drawActionIndicator({
@@ -96,16 +69,4 @@ function getPhaseColor(phase) {
   }
 
   return RECOVERY_COLOR;
-}
-
-function getActionPhaseProgress(timeRemaining, phaseDuration) {
-  if (phaseDuration <= 0) {
-    return 0;
-  }
-
-  return clamp(1 - timeRemaining / phaseDuration, 0, 1);
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
 }
