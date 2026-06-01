@@ -1,26 +1,16 @@
-import { getComponent, queryEntities } from "../ecs/world.js";
-import { ComponentType } from "../domain/components.js";
 import { worldToScreen } from "./camera.js";
 
 const FONT_FAMILY = "Georgia, 'Times New Roman', serif";
 
-export function drawEntities(context, world, pixelRatio, camera) {
-  const renderableEntities = queryEntities(world, [
-    ComponentType.Position,
-    ComponentType.Renderable,
-  ]);
-
-  for (const entityId of renderableEntities) {
-    const position = getComponent(world, entityId, ComponentType.Position);
-    const renderable = getComponent(world, entityId, ComponentType.Renderable);
-
-    if (renderable.shape === "glyph") {
-      drawGlyph(context, position, renderable, pixelRatio, camera);
+export function drawEntities(context, entities, pixelRatio, camera) {
+  for (const entity of entities) {
+    if (entity.renderable.shape === "glyph") {
+      drawGlyph(context, entity.position, entity.renderable, pixelRatio, camera);
       continue;
     }
 
-    if (renderable.shape === "rect") {
-      drawRect(context, position, renderable, pixelRatio, camera);
+    if (entity.renderable.shape === "rect") {
+      drawRect(context, entity.position, entity.renderable, pixelRatio, camera);
     }
   }
 }
