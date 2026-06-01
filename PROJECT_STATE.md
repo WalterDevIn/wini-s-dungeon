@@ -32,6 +32,8 @@ Se agregó `feature/player-mouse-midpoint-camera`: existe `src/render/camera.js`
 
 Se agregó `feature/nestor-palace-like-static-tilemap`: `src/world/tilemap.js` ahora contiene una traducción manual más fiel al plano adjunto del palacio de Néstor/Pilos. El mapa usa un blueprint ASCII rectangular de 48x28 tiles, solo con `#` y `.`, con bloque superior de cuartos, sala central amplia, ala izquierda de habitaciones pequeñas, ala derecha de salas y corredores, pasillos estrechos, corredores de 2 tiles y un sector inferior de entrada/antecámaras. `createPlayer` y `createDemoEncounter` fueron reubicados en posiciones caminables. Siguen fuera de scope puertas, línea de visión, generación procedural, chunks, pathfinding, tiles decorativos y cambios de cámara.
 
+Se aplicó `refactor/render-snapshot-boundary`: existe `src/game/buildRenderSnapshot.js` como traductor ECS -> datos de render. `createGameApp` construye un render snapshot por frame y `canvasRenderer`, `drawEntities` y `drawActionIndicators` ya no reciben ni consultan `world` directamente. Render conserva solo dibujo, cámara visual, colores y geometría.
+
 El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
@@ -119,11 +121,12 @@ Ninguno.
 
 ## Render existente
 
-- `src/render/canvasRenderer.js`: renderiza mapa, entidades y action indicators usando un snapshot de cámara.
+- `src/game/buildRenderSnapshot.js`: construye el snapshot de render desde ECS con `tilemap`, `camera`, entidades renderizables e indicadores de acción ya derivados.
+- `src/render/canvasRenderer.js`: renderiza mapa, entidades y action indicators desde un render snapshot; no recibe `world` directamente.
 - `src/render/camera.js`: contiene helpers puros para calcular cámara, convertir coordenadas mundo/pantalla y clamppear el viewport contra el tilemap.
 - `src/render/drawMap.js`: dibuja el tilemap estático aplicando offset de cámara.
-- `src/render/drawEntities.js`: dibuja entidades renderizables aplicando offset de cámara.
-- `src/render/drawActionIndicators.js`: dibuja indicadores circulares de progreso centrados sobre enemigos `AIControlled` durante `windup` y `recovery`, aplicando offset de cámara.
+- `src/render/drawEntities.js`: dibuja entidades renderizables recibidas desde el render snapshot aplicando offset de cámara.
+- `src/render/drawActionIndicators.js`: dibuja indicadores circulares de progreso recibidos desde el render snapshot, aplicando offset de cámara.
 
 ## Reglas puras existentes
 
@@ -153,7 +156,7 @@ Ninguno.
 
 ## App helpers existentes
 
-- `createGameApp`: coordina creación de mundo, input, cámara, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico, `aimIntent` y snapshot UI. Crea el jugador y el encounter estático de demo.
+- `createGameApp`: coordina creación de mundo, input, cámara, renderer, UI, entidades iniciales, game loop, simulation step, render, modo táctico, `aimIntent`, render snapshot y snapshot UI. Crea el jugador y el encounter estático de demo.
 - `commandMapper`: convierte input de app en commands mínimos; actualmente `LMB` produce `AttackCommand` y `RMB` produce `CastCommand` de Firebolt si hay puntero válido. El target de Firebolt se recibe ya convertido a coordenadas de mundo mediante una función provista por app.
 - `tacticalModeController`: mantiene modo `running`/`tacticalPaused`, command pendiente y liberación del command al despausar.
 
@@ -185,6 +188,7 @@ Ninguno.
 - `src/game/createEnemy.js`
 - `src/game/createDemoEncounter.js`
 - `src/game/playerQueries.js`
+- `src/game/buildRenderSnapshot.js`
 - `src/game/buildUiSnapshot.js`
 - `src/input/keyboardInput.js`
 - `src/input/keyboardKeyState.js`
@@ -252,6 +256,12 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 
 ## Decisiones recientes
 
+- Se aplicó `refactor/render-snapshot-boundary`: `src/game/buildRenderSnapshot.js` construye datos planos para render desde ECS, incluyendo entidades renderizables e indicadores de acción.
+- `createGameApp` ahora construye un render snapshot por frame y llama `renderer.render(renderSnapshot)`.
+- `canvasRenderer` consume `renderSnapshot` y ya no recibe `world`.
+- `drawEntities` consume una lista de entidades renderizables y ya no importa ECS ni componentes de domain.
+- `drawActionIndicators` consume una lista de indicadores de acción y ya no importa ECS ni componentes de domain.
+- El cálculo de `phaseProgress` de indicadores de acción vive por ahora en `buildRenderSnapshot`; colores, radios, sombras y geometría siguen en render.
 - Se reemplazó el tilemap anterior por un blueprint estático manual de 48x28 tiles mucho más parecido al plano adjunto del palacio de Néstor/Pilos.
 - El nuevo mapa mantiene solo `#` para sólido y `.` para caminable, sin puertas, símbolos decorativos, columnas ni props.
 - `createPlayer` ahora posiciona al jugador en `{ x: 1056, y: 1152 }`, en el sector inferior del mapa.
