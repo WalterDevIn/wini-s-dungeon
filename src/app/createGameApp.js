@@ -3,7 +3,7 @@ import { createDemoEncounter } from "../game/createDemoEncounter.js";
 import { createPlayer } from "../game/createPlayer.js";
 import { createKeyboardInput } from "../input/keyboardInput.js";
 import { createMouseInput } from "../input/mouseInput.js";
-import { tilemap } from "../world/tilemap.js";
+import { dungeonMetadata, tilemap } from "../world/tilemap.js";
 import { createCanvasRenderer } from "../render/canvasRenderer.js";
 import { createHudUi } from "../ui/hudUi.js";
 import { runGameFrame } from "./gameFrame.js";
@@ -21,8 +21,8 @@ export function createGameApp({ canvas, context, uiRoot }) {
     lastCommand: null,
   };
 
-  createPlayer(world);
-  createDemoEncounter(world);
+  createPlayer(world, { position: dungeonMetadata.playerSpawn });
+  createDemoEncounter(world, { spawns: dungeonMetadata.encounterSpawns });
 
   function start() {
     requestAnimationFrame(frame);
