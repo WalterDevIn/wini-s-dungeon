@@ -8,35 +8,19 @@ Debe actualizarse al terminar cada milestone, feature importante o refactor arqu
 
 Milestone 5.1 completado: modo táctico pausado mínimo con `Space`, preparación de golpe con `LMB` durante pausa y ejecución del `AttackCommand` preparado al despausar.
 
-Milestone 6 está iniciado y funcional: ya existe foundation mínima de proyectiles genéricos ECS y Firebolt mínimo mediante `CastCommand` con botón derecho del mouse. Firebolt usa `ActionEconomy`: tiene windup de 1.5 segundos, recovery global de 3 segundos, bloquea melee y nuevos casteos durante windup/recovery, permite reapuntar durante windup mediante `aimIntent`, y genera el proyectil solo al finalizar el windup hacia el último target válido. `ActionEconomy.phaseDuration` normaliza el feedback de progreso para cualquier acción activa. Todavía no hay spell slots, recursos, cooldown visual, prepared spells, hotbar conectada a casteo ni menú táctico de conjuros.
+Milestone 6 está iniciado y funcional: existe foundation mínima de proyectiles genéricos ECS y Firebolt mínimo mediante `CastCommand` con botón derecho del mouse. Firebolt usa `ActionEconomy`: tiene windup de 1.5 segundos, recovery global de 3 segundos, bloquea melee y nuevos casteos durante windup/recovery, permite reapuntar durante windup mediante `aimIntent`, y genera el proyectil solo al finalizar el windup hacia el último target válido. Todavía no hay spell slots, recursos, cooldown visual, prepared spells, hotbar conectada a casteo ni menú táctico de conjuros.
 
-Se aplicó el refactor preventivo `refactor/action-economy-rules`: el protocolo común de acciones con fases vive en `src/domain/rules/actionEconomyRules.js`. `meleeCombatSystem` y `spellCastSystem` siguen resolviendo sus reglas específicas, pero ya no setean manualmente en varios lugares `currentAction`, `phase`, `timeRemaining`, `phaseDuration` ni la limpieza de `pendingAttack`/`pendingSpell`.
+Se aplicó `feature/generated-dungeon-foundation-v1`: el tilemap manual fijo fue reemplazado por generación v1 desde `src/world`. `src/world/tilemap.js` ahora exporta `tilemap`, `tileSize`, `dungeonMetadata` y conserva `isSolidTile`, `isSolidAtPixel` y `collidesWithSolidTile`. `dungeonMetadata` conserva `rooms`, `corridors`, `features`, `playerSpawn`, `encounterSpawns`, `stairsUp` y `stairsDown`. Escaleras y huecos funcionales siguen fuera de scope. No se agregaron componentes, sistemas, commands ni events.
 
-Se aplicó el refactor preventivo `refactor/creature-factory-foundation`: existe `src/domain/factories/createCreature.js` como factory base para criaturas ECS. `src/game/createPlayer.js` y `src/game/createEnemy.js` conservan sus APIs públicas, pero delegan la construcción común en `createCreature`.
+El generador vive en `src/world/mapGeneration.js`, usa helpers de features en `src/world/mapFeatures.js` y helpers de metadata/spawns en `src/world/mapMetadata.js`. La generación v1 usa seed fija, mantiene solo `#` como muro sólido y `.` como piso caminable, genera entre 6 y 10 salas conectadas por pasillos, incluye salas pequeñas y al menos una sala grande, y deja metadata estructural para futuras features como pasillos de acceso, puertas, escaleras funcionales, huecos, cofres o trampas.
 
-Se aplicó el refactor preventivo `refactor/creature-content-definitions`: las definiciones concretas de criaturas viven ahora en `src/content/creatures`. `humanAdventurer` define la criatura inicial controlada por el jugador y `goblinSkirmisher` define la criatura enemiga inicial controlada por IA. `createPlayer(world)` y `createEnemy(world)` quedan como wrappers temporales de demo que obtienen definiciones desde `creatureRegistry` y llaman a `createCreature`. `Creature.kind` dejó de representar `player`/`enemy` y ahora expresa identidad de criatura mínima: `human` y `goblin`.
+`createPlayer` ahora recibe la posición del jugador desde app mediante `{ position }`. `createDemoEncounter` ahora recibe `{ spawns }` y crea el encounter demo usando spawns derivados del dungeon generado. `createGameApp` importa `dungeonMetadata` desde `src/world/tilemap.js` y pasa `dungeonMetadata.playerSpawn` / `dungeonMetadata.encounterSpawns` a las factories de game.
 
-Se agregó `content/basic-creature-roster-rat-bat-stonecrawler`: existen definiciones de content para `rat`, `bat` y `stoneCrawler`, registradas en `creatureRegistry`.
+Se aplicó `refactor/app-frame-boundary-and-player-query-cleanup`: `createGameApp` quedó como composition root y loop mínimo. La ejecución de cada frame vive en `src/app/gameFrame.js`, `aimIntent` se construye en `src/app/aimIntent.js` como intent abstracto frame-local, y el centro del jugador se obtiene desde `src/game/playerQueries.js` mediante `getPlayerCenterPoint(world)`. No existe todavía una capa formal `domain/intents.js`.
 
-Se aplicó `refactor/creature-position-as-spawn-override`: las definiciones de `src/content/creatures` ya no contienen `position`. La posición ahora es dato de spawn y se pasa a `createCreature(world, definition, { position })`.
+Se aplicó `refactor/render-snapshot-boundary`: existe `src/game/buildRenderSnapshot.js` como traductor ECS -> datos de render. `canvasRenderer`, `drawEntities` y `drawActionIndicators` consumen datos preparados y ya no consultan `world` directamente. Render conserva solo dibujo, cámara visual, colores y geometría.
 
-Se agregó `feature/demo-encounter-spawn-list`: existe `src/game/createDemoEncounter.js` como encounter estático de demo. `createGameApp` crea el jugador y luego llama a `createDemoEncounter(world)` en lugar de crear un único `createEnemy(world)`. El encounter inicial spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas. No hay dungeon generation procedural, puertas, línea de visión ni sistema dinámico de spawn.
-
-Se agregó `feature/enemy-action-progress-indicator`: el renderer dibuja indicadores circulares para enemigos con `AIControlled` durante `windup` y `recovery`. El indicador lee `ActionEconomy.timeRemaining`, `phaseDuration` y `phase` desde ECS, usa verde para windup y amarillo para recovery, y es feedback visual solamente.
-
-Se agregó `feature/player-health-bar-and-grounded-action-indicators`: los indicadores enemigos se corrigieron para quedar centrados en la entidad como círculo de suelo, no literalmente debajo del sprite. La UI muestra una barra de vida read-only sobre la hotbar/inventario, alineada a la izquierda, con un cuadradito por punto de vida máxima del jugador y estado lleno/vacío según `Health.current`. La vida se expone mediante `buildUiSnapshot`; UI no lee ECS directamente fuera del flujo existente. No se modificó simulation ni reglas.
-
-Se agregó `feature/expanded-static-palace-like-tilemap`: `src/world/tilemap.js` pasó a tener un mapa estático más grande, inspirado en una planta palacial. Esta versión fue reemplazada después por una traducción manual más fiel al plano de Néstor.
-
-Se agregó `feature/player-mouse-midpoint-camera`: existe `src/render/camera.js` con helpers puros para crear un snapshot de cámara, convertir coordenadas mundo/pantalla y clamppear el viewport contra el tilemap. `createGameApp` calcula la cámara cada frame usando el centro del jugador, el puntero físico y el viewport. El renderer dibuja mapa, entidades e indicadores usando offset de cámara. Los targets de Firebolt y `aimIntent` se convierten de coordenadas de pantalla a coordenadas de mundo antes de entrar a commands/simulation. No se implementaron smoothing, zoom, shake, minimap, chunks, línea de visión ni cambios de simulación.
-
-Se agregó `feature/nestor-palace-like-static-tilemap`: `src/world/tilemap.js` ahora contiene una traducción manual más fiel al plano adjunto del palacio de Néstor/Pilos. El mapa usa un blueprint ASCII rectangular de 48x28 tiles, solo con `#` y `.`, con bloque superior de cuartos, sala central amplia, ala izquierda de habitaciones pequeñas, ala derecha de salas y corredores, pasillos estrechos, corredores de 2 tiles y un sector inferior de entrada/antecámaras. `createPlayer` y `createDemoEncounter` fueron reubicados en posiciones caminables. Siguen fuera de scope puertas, línea de visión, generación procedural, chunks, pathfinding, tiles decorativos y cambios de cámara.
-
-Se aplicó `refactor/render-snapshot-boundary`: existe `src/game/buildRenderSnapshot.js` como traductor ECS -> datos de render. `createGameApp` construye un render snapshot por frame y `canvasRenderer`, `drawEntities` y `drawActionIndicators` ya no reciben ni consultan `world` directamente. Render conserva solo dibujo, cámara visual, colores y geometría.
-
-Se aplicó `refactor/app-frame-boundary-and-player-query-cleanup`: `createGameApp` quedó como bootstrap y loop mínimo. La ejecución de cada frame vive en `src/app/gameFrame.js`, `aimIntent` se construye en `src/app/aimIntent.js` como intent abstracto frame-local, y el centro del jugador se obtiene desde `src/game/playerQueries.js` mediante `getPlayerCenterPoint(world)`. No se creó todavía una capa formal `domain/intents.js`.
-
-El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap fijo simple y permite mover un jugador como entidad ECS.
+El proyecto tiene una aplicación mínima que abre en navegador, carga un canvas, ejecuta un game loop con `requestAnimationFrame`, dibuja un tilemap generado y permite mover un jugador como entidad ECS.
 
 El jugador se controla con teclado, se mueve usando `deltaSeconds`, no atraviesa paredes del tilemap y no sale del mapa porque los bordes son tiles sólidos.
 
@@ -57,8 +41,6 @@ Hay proyectiles genéricos como entidades ECS con `Projectile`, `Lifetime`, `Dam
 Firebolt está definido como conjuro mínimo data-driven en `src/content/spells/firebolt.js`, registrado por `src/content/spells/spellRegistry.js`. El proyectil se crea al terminar el windup hacia el último target válido en coordenadas de mundo.
 
 La UI mínima muestra feedback de input, cursor custom, hotbar visual mínima y barra de vida del jugador. La hotbar visual tiene modos `inventory`, `spells` y `features`, pero todavía no representa inventario real, items, spell slots, prepared spells ni features activables. La UI no aplica reglas ni modifica ECS.
-
-`main.js` quedó reducido a bootstrap. La coordinación de app/session, creación de mundo, input, cámara, renderer, UI, loop, simulation, render snapshot y snapshot UI se divide entre `createGameApp` como composition root y `gameFrame` como ejecutor de frame. La conversión de input a command vive en `commandMapper`. El estado de pausa táctica vive en `tacticalModeController`.
 
 ## Sistemas existentes
 
@@ -117,16 +99,23 @@ Ninguno.
 ## Factories existentes
 
 - `src/domain/factories/createCreature.js`: factory mínima para crear criaturas ECS desde una definición de content y datos de spawn explícitos, actualmente `position`, con componentes comunes y controles opcionales `PlayerControlled` o `AIControlled`.
-- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world)`, obtiene `humanAdventurer` desde content y delega en `createCreature` con posición inicial `{ x: 1056, y: 1152 }`.
-- `src/game/createEnemy.js`: wrapper legacy/demo que conserva `createEnemy(world)`, obtiene `goblinSkirmisher` desde content y delega en `createCreature` con posición inicial `{ x: 240, y: 192 }`, pero el arranque actual usa `createDemoEncounter` en su lugar.
-- `src/game/createDemoEncounter.js`: encounter estático de demo que spawnea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` con posiciones explícitas adaptadas al mapa tipo palacio de Néstor.
+- `src/game/createPlayer.js`: wrapper de demo que conserva `createPlayer(world, { position })`, obtiene `humanAdventurer` desde content y delega en `createCreature` con posición inyectada desde metadata de dungeon.
+- `src/game/createEnemy.js`: wrapper legacy/demo que conserva `createEnemy(world)`, pero el arranque actual usa `createDemoEncounter` en su lugar.
+- `src/game/createDemoEncounter.js`: encounter estático de demo que recibe spawns inyectados y crea `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` en posiciones generadas caminables.
+
+## World existente
+
+- `src/world/tilemap.js`: exporta el tilemap generado, `tileSize`, `dungeonMetadata` y helpers de colisión.
+- `src/world/mapGeneration.js`: orquesta generación de dungeon v1.
+- `src/world/mapFeatures.js`: crea features de salas y pasillos con `id`, `type`, `bounds`, `tiles`, `center` y `exits`.
+- `src/world/mapMetadata.js`: deriva player spawn, encounter spawns y markers de stair up/down desde rooms generadas.
 
 ## Render existente
 
 - `src/game/buildRenderSnapshot.js`: construye el snapshot de render desde ECS con `tilemap`, `camera`, entidades renderizables e indicadores de acción ya derivados.
 - `src/render/canvasRenderer.js`: renderiza mapa, entidades y action indicators desde un render snapshot; no recibe `world` directamente.
 - `src/render/camera.js`: contiene helpers puros para calcular cámara, convertir coordenadas mundo/pantalla y clamppear el viewport contra el tilemap.
-- `src/render/drawMap.js`: dibuja el tilemap estático aplicando offset de cámara.
+- `src/render/drawMap.js`: dibuja el tilemap aplicando offset de cámara.
 - `src/render/drawEntities.js`: dibuja entidades renderizables recibidas desde el render snapshot aplicando offset de cámara.
 - `src/render/drawActionIndicators.js`: dibuja indicadores circulares de progreso recibidos desde el render snapshot, aplicando offset de cámara.
 
@@ -161,7 +150,7 @@ Ninguno.
 - `createGameApp`: composition root; crea mundo, input, renderer, UI, tactical mode, entidades iniciales, estado mínimo de frame y arranca el loop.
 - `gameFrame`: ejecuta la coordinación de un frame con dependencias inyectadas: input snapshot, cámara, commands, simulation, render snapshot y UI snapshot.
 - `aimIntent`: construye el intent abstracto frame-local de apuntado desde `mouseSnapshot` y una función de conversión pantalla -> mundo. No existe todavía `domain/intents.js`.
-- `commandMapper`: convierte input de app en commands mínimos; actualmente `LMB` produce `AttackCommand` y `RMB` produce `CastCommand` de Firebolt si hay puntero válido. El target de Firebolt se recibe ya convertido a coordenadas de mundo mediante una función provista por app.
+- `commandMapper`: convierte input de app en commands mínimos; actualmente `LMB` produce `AttackCommand` y `RMB` produce `CastCommand` de Firebolt si hay puntero válido.
 - `tacticalModeController`: mantiene modo `running`/`tacticalPaused`, command pendiente y liberación del command al despausar.
 
 ## Game queries existentes
@@ -208,6 +197,9 @@ Ninguno.
 - `src/input/mouseWheelState.js`
 - `src/input/mousePointerState.js`
 - `src/world/tilemap.js`
+- `src/world/mapGeneration.js`
+- `src/world/mapFeatures.js`
+- `src/world/mapMetadata.js`
 - `src/simulation/runSimulationStep.js`
 - `src/simulation/playerControlSystem.js`
 - `src/simulation/aiSystem.js`
@@ -237,20 +229,17 @@ Ninguno.
 
 ## Próximo objetivo
 
-Milestone Pre-7 siguiente scope recomendado: validar cámara + mapa tipo palacio de Néstor y luego elegir entre `feature/inventory-trait-foundation` o Milestone 7 `doors-and-vision`. Inventory debe nacer como trait ECS genérico aplicable a criaturas o contenedores, no como propiedad especial del jugador.
-
-Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reutilizar `actionEconomyRules` en lugar de duplicar protocolo de `ActionEconomy` dentro de cada sistema.
+Validar visual y jugablemente `feature/generated-dungeon-foundation-v1`: conectividad, spawns, cámara, combate en salas/pasillos y tamaño del mapa. Luego elegir entre mejorar generación de features —pasillos de acceso, formas de sala, stair interaction— o avanzar con `feature/inventory-trait-foundation` / Milestone 7 `doors-and-vision`.
 
 ## Riesgos actuales
 
+- La generación v1 es determinista y básica; no hay todavía validación formal de conectividad con flood fill ni tests automatizados.
 - La cámara no tiene smoothing, zoom ni tratamiento especial para mapas más pequeños que el viewport; es una cámara mínima determinista.
-- El mapa tipo palacio es una traducción manual usando solo `#` y `.`, por lo que no expresa puertas, columnas, números, círculo central ni decoraciones del plano original.
-- La IA persigue en línea recta y no tiene pathfinding; algunas salas laterales pueden ser poco útiles para enemigos hasta Milestone 7+ o pathfinding futuro.
+- La IA persigue en línea recta y no tiene pathfinding; con mapas generados y pasillos, puede atascarse o perseguir mal hasta Milestone 7+ o pathfinding futuro.
 - Firebolt por `RMB` usa `ActionEconomy`, pero no tiene spell slots, recursos ni cooldown visual.
 - `spellCastSystem` todavía concentra varias responsabilidades: actualización de target, validación de spell, resolución de fase y resolución de efecto. No partir todavía salvo que aparezca un segundo spell o segundo effect type, o que el archivo siga creciendo.
 - `createCreature` todavía recibe definiciones con estructura mínima; no existe sistema de species/archetype/progression y no debe agregarse sin scope.
-- `createDemoEncounter` es un encounter estático de demo, no un sistema de spawn dinámico ni generación de mazmorra.
-- El tilemap nuevo es estático y manual; no hay `mapGeneration`, `rooms`, puertas ni línea de visión.
+- `createDemoEncounter` sigue siendo un encounter estático de demo con spawns generados, no un sistema de spawn procedural avanzado.
 - Inventory todavía no existe; cuando se agregue, debe ser trait ECS reutilizable para criaturas/contenedores.
 - La IA detecta por distancia y facción, no por línea de visión.
 - La muerte del jugador remueve la entidad sin pantalla de derrota.
@@ -260,41 +249,16 @@ Antes de agregar dash, items, features, scrolls o nuevas acciones con fases, reu
 - No existe event bus ni events.
 - `gameFrame` sigue siendo el punto de presión de app/session; si crece el modo táctico, conviene extraer más coordinación sin devolver lógica a `createGameApp`.
 - La hotbar visual deriva selección desde `wheelIndex`; es una solución provisional de UI, no una fuente de verdad de inventario, spellcasting ni features activables.
-- Sobrecargar el ECS mínimo antes de necesitar command buffer o event bus.
 - Crear lógica de juego dentro de input o render.
 - Pedir a la IA implementaciones grandes sin scope.
 
 ## Decisiones recientes
 
-- Se aplicó `refactor/app-frame-boundary-and-player-query-cleanup`: `createGameApp` quedó como composition root y loop mínimo.
-- `src/app/gameFrame.js` ejecuta el frame con dependencias inyectadas y preserva el orden previo de input, cámara, commands, simulation, render y UI.
-- `src/app/aimIntent.js` construye `aimIntent` como intent abstracto frame-local desde `mouseSnapshot` y `screenToWorldPoint`.
-- `src/game/playerQueries.js` ahora expone `getPlayerCenterPoint(world)` como query read-only del centro del jugador.
-- No se creó `src/domain/intents.js`; la formalización general de intents queda postergada hasta que existan más intents abstractos.
-- Se aplicó `refactor/render-snapshot-boundary`: `src/game/buildRenderSnapshot.js` construye datos planos para render desde ECS, incluyendo entidades renderizables e indicadores de acción.
-- `createGameApp` ahora construye un render snapshot por frame y llama `renderer.render(renderSnapshot)`.
-- `canvasRenderer` consume `renderSnapshot` y ya no recibe `world`.
-- `drawEntities` consume una lista de entidades renderizables y ya no importa ECS ni componentes de domain.
-- `drawActionIndicators` consume una lista de indicadores de acción y ya no importa ECS ni componentes de domain.
-- El cálculo de `phaseProgress` de indicadores de acción vive por ahora en `buildRenderSnapshot`; colores, radios, sombras y geometría siguen en render.
-- Se reemplazó el tilemap anterior por un blueprint estático manual de 48x28 tiles mucho más parecido al plano adjunto del palacio de Néstor/Pilos.
-- El nuevo mapa mantiene solo `#` para sólido y `.` para caminable, sin puertas, símbolos decorativos, columnas ni props.
-- `createPlayer` ahora posiciona al jugador en `{ x: 1056, y: 1152 }`, en el sector inferior del mapa.
-- `createDemoEncounter` reubicó `rat`, `bat`, `goblinSkirmisher` y `stoneCrawler` en posiciones caminables dentro del mapa tipo palacio.
-- No se tocaron app, input, UI, simulation, domain, render, ECS ni content para este cambio de mapa.
-- Se agregó `src/render/camera.js` para calcular cámara mínima centrada entre jugador y mouse, con conversión `worldToScreen` / `screenToWorld` y clamp contra tilemap.
-- `createGameApp` calcula un snapshot de cámara por frame y usa ese snapshot tanto para render como para convertir targets del mouse a coordenadas de mundo.
-- `commandMapper` recibe `mouseSnapshot` y una función `screenToWorldPoint` desde app para construir `CastCommand` con target de mundo.
-- `createAimIntent` ahora convierte el puntero físico a coordenadas de mundo antes de pasarlo a simulation.
-- `canvasRenderer`, `drawMap`, `drawEntities` y `drawActionIndicators` aplican offset de cámara solo al dibujar.
-- No se agregaron smoothing, zoom, shake, minimap, chunks, línea de visión, componentes, sistemas, commands ni events.
-- Se corrigió `drawActionIndicators` para centrar el ring enemigo sobre la entidad usando `renderable.height * 0.58`.
-- `buildUiSnapshot` ahora expone `playerHealth` leyendo `Health` del jugador.
-- `hudLayout` agregó `data-player-health-bar` sobre la hotbar.
-- `hudUi` recolecta `playerHealthBar` y llama `updatePlayerHealthBar`.
-- `hudUpdate` renderiza un cuadradito por punto de vida máxima y marca llenos según vida actual.
-- `quickBar.css` contiene estilos de barra de vida y pips lleno/vacío.
-- La barra de vida es UI read-only desde snapshot; no modifica ECS ni simulation.
+- Se implementó `feature/generated-dungeon-foundation-v1` en rama propia `feature/generated-dungeon-foundation-v1`.
+- El tilemap manual fue reemplazado por generación v1 desde `world`.
+- `dungeonMetadata` conserva rooms, corridors, features, player spawn, encounter spawns y stair markers.
+- Escaleras y huecos funcionales siguen fuera de scope.
+- No se agregaron componentes, sistemas, commands ni events.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
