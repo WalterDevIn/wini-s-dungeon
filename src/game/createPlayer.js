@@ -1,11 +1,8 @@
 import { getCreatureDefinition } from "../content/creatures/creatureRegistry.js";
 import { createCreature } from "../domain/factories/createCreature.js";
 
-export function createPlayer(world) {
+export function createPlayer(world, { position }) {
   return createCreature(world, getCreatureDefinition("humanAdventurer"), {
-    position: {
-      x: 1056,
-      y: 1152,
-    },
+    position,
   });
 }
