@@ -1,15 +1,12 @@
-import {
-  createRectTiles,
-  createRoomFeature,
-  createTileFeature,
-  getBoundsFromTiles,
-} from "./mapFeatures.js";
+import { createRoomFeature, createTileFeature, getBoundsFromTiles } from "./mapFeatures.js";
 import { createDungeonMetadata } from "./mapMetadata.js";
 
 const WALL_TILE = "#";
 const FLOOR_TILE = ".";
 const CORRIDOR_WIDTH = 2;
-const CORRIDOR_PADDING = 1;
+const CORRIDOR_GAP = 1;
+const ANTECHAMBER_SIZE = 3;
+const ANTECHAMBER_GAP = 1;
 
 export function generatePalaceRingMap(config) {
   const resolvedConfig = resolveConfig(config);
@@ -33,13 +30,13 @@ export function generatePalaceRingMap(config) {
     addRoom({ room: antechamber, grid, rooms, features });
   }
 
-  const centralBlockBounds = getBoundsFromTiles([
+  const occupiedTiles = [
     ...centralHall.tiles,
     ...antechambers.flatMap((antechamber) => antechamber.tiles),
-  ]);
+  ];
   const mainCorridor = createMainCorridor({
     id: createFeatureId(features),
-    centralBlockBounds,
+    occupiedTiles,
   });
   addCorridor({ corridor: mainCorridor, grid, corridors, features });
 
@@ -54,8 +51,18 @@ export function generatePalaceRingMap(config) {
     addRoom({ room: externalRoom, grid, rooms, features });
   }
 
-  paintTiles(grid, createConnectorTiles({ centralHall, antechambers, mainCorridor }), FLOOR_TILE);
-  paintTiles(grid, createExternalRoomConnectorTiles({ externalRooms, mainCorridor }), FLOOR_TILE);
+  const corridorTileSet = createTileSet(mainCorridor.tiles);
+
+  paintTiles(
+    grid,
+    createAntechamberConnectorTiles({ centralHall, antechambers, corridorTileSet }),
+    FLOOR_TILE,
+  );
+  paintTiles(
+    grid,
+    createExternalRoomConnectorTiles({ externalRooms, corridorTileSet }),
+    FLOOR_TILE,
+  );
 
   const tiles = grid.map((row) => row.join(""));
 
@@ -83,8 +90,8 @@ function resolveConfig(config) {
     height: config.height ?? 40,
     tileSize: config.tileSize ?? 48,
     centralHall: {
-      width: config.centralHall?.width ?? 12,
-      height: config.centralHall?.height ?? 8,
+      width: config.centralHall?.width ?? 20,
+      height: config.centralHall?.height ?? 10,
     },
   };
 }
@@ -104,32 +111,33 @@ function createAntechambers({ nextId, centralHall }) {
   const hall = centralHall.bounds;
   const middleX = centralHall.center.x;
   const middleY = centralHall.center.y;
+  const offset = ANTECHAMBER_SIZE + ANTECHAMBER_GAP;
 
   return [
     createAntechamber({
       id: nextId,
       x: middleX - 1,
-      y: hall.y - 3,
+      y: hall.y - offset,
       side: "north",
       attachedTo: centralHall.id,
     }),
     createAntechamber({
       id: nextId + 1,
       x: middleX - 1,
-      y: hall.y + hall.height,
+      y: hall.y + hall.height + ANTECHAMBER_GAP,
       side: "south",
       attachedTo: centralHall.id,
     }),
     createAntechamber({
       id: nextId + 2,
-      x: hall.x - 3,
+      x: hall.x - offset,
       y: middleY - 1,
       side: "west",
       attachedTo: centralHall.id,
     }),
     createAntechamber({
       id: nextId + 3,
-      x: hall.x + hall.width,
+      x: hall.x + hall.width + ANTECHAMBER_GAP,
       y: middleY - 1,
       side: "east",
       attachedTo: centralHall.id,
@@ -143,25 +151,30 @@ function createAntechamber({ id, x, y, side, attachedTo }) {
     type: "antechamber",
     x,
     y,
-    width: 3,
-    height: 3,
+    width: ANTECHAMBER_SIZE,
+    height: ANTECHAMBER_SIZE,
     side,
     attachedTo,
   });
 }
 
-function createMainCorridor({ id, centralBlockBounds }) {
-  const outerBounds = expandBounds(centralBlockBounds, CORRIDOR_PADDING + CORRIDOR_WIDTH);
-  const innerBounds = expandBounds(centralBlockBounds, CORRIDOR_PADDING);
+function createMainCorridor({ id, occupiedTiles }) {
+  const occupiedTileSet = createTileSet(occupiedTiles);
+  const occupiedBounds = getBoundsFromTiles(occupiedTiles);
+  const searchBounds = expandBounds(occupiedBounds, CORRIDOR_GAP + CORRIDOR_WIDTH);
   const tiles = [];
 
-  for (let y = outerBounds.y; y < outerBounds.y + outerBounds.height; y += 1) {
-    for (let x = outerBounds.x; x < outerBounds.x + outerBounds.width; x += 1) {
-      if (isInsideBounds({ x, y }, innerBounds)) {
+  for (let y = searchBounds.y; y < searchBounds.y + searchBounds.height; y += 1) {
+    for (let x = searchBounds.x; x < searchBounds.x + searchBounds.width; x += 1) {
+      if (occupiedTileSet.has(createTileKey({ x, y }))) {
         continue;
       }
 
-      tiles.push({ x, y });
+      const distance = getChebyshevDistanceToTiles({ x, y }, occupiedTiles);
+
+      if (distance > CORRIDOR_GAP && distance <= CORRIDOR_GAP + CORRIDOR_WIDTH) {
+        tiles.push({ x, y });
+      }
     }
   }
 
@@ -169,9 +182,10 @@ function createMainCorridor({ id, centralBlockBounds }) {
     id,
     type: "main_corridor",
     tiles,
-    bounds: outerBounds,
+    bounds: getBoundsFromTiles(tiles),
     width: CORRIDOR_WIDTH,
-    ringAround: "central_block",
+    gap: CORRIDOR_GAP,
+    ringAround: "central_hall_and_antechambers",
   });
 }
 
@@ -182,7 +196,14 @@ function createExternalRooms({ nextId, mainCorridor, mapWidth, mapHeight }) {
       side: "north",
       width: 6,
       height: 4,
-      x: mainCorridor.center.x - 3,
+      x: ring.x + 4,
+      y: ring.y - 5,
+    },
+    {
+      side: "north",
+      width: 6,
+      height: 4,
+      x: ring.x + ring.width - 10,
       y: ring.y - 5,
     },
     {
@@ -190,14 +211,42 @@ function createExternalRooms({ nextId, mainCorridor, mapWidth, mapHeight }) {
       width: 5,
       height: 5,
       x: ring.x + ring.width + 1,
-      y: mainCorridor.center.y - 2,
+      y: ring.y + 5,
+    },
+    {
+      side: "east",
+      width: 5,
+      height: 5,
+      x: ring.x + ring.width + 1,
+      y: ring.y + ring.height - 10,
     },
     {
       side: "south",
       width: 7,
       height: 4,
-      x: mainCorridor.center.x - 3,
+      x: ring.x + 4,
       y: ring.y + ring.height + 1,
+    },
+    {
+      side: "south",
+      width: 7,
+      height: 4,
+      x: ring.x + ring.width - 11,
+      y: ring.y + ring.height + 1,
+    },
+    {
+      side: "west",
+      width: 5,
+      height: 5,
+      x: ring.x - 6,
+      y: ring.y + 5,
+    },
+    {
+      side: "west",
+      width: 5,
+      height: 5,
+      x: ring.x - 6,
+      y: ring.y + ring.height - 10,
     },
   ];
 
@@ -217,64 +266,123 @@ function createExternalRooms({ nextId, mainCorridor, mapWidth, mapHeight }) {
     );
 }
 
-function createConnectorTiles({ centralHall, antechambers, mainCorridor }) {
-  return antechambers.flatMap((antechamber) => {
-    if (antechamber.side === "north") {
-      return createVerticalConnector({
-        x: antechamber.center.x,
-        fromY: mainCorridor.bounds.y + mainCorridor.width - 1,
-        toY: centralHall.bounds.y,
-      });
-    }
+function createAntechamberConnectorTiles({ centralHall, antechambers, corridorTileSet }) {
+  return antechambers.flatMap((antechamber) => [
+    ...createCentralHallConnectorTiles({ centralHall, antechamber }),
+    ...createCorridorConnectorTiles({ room: antechamber, corridorTileSet }),
+  ]);
+}
 
-    if (antechamber.side === "south") {
-      return createVerticalConnector({
-        x: antechamber.center.x,
-        fromY: centralHall.bounds.y + centralHall.bounds.height - 1,
-        toY: mainCorridor.bounds.y + mainCorridor.bounds.height - mainCorridor.width,
-      });
-    }
+function createCentralHallConnectorTiles({ centralHall, antechamber }) {
+  if (antechamber.side === "north") {
+    return createVerticalConnector({
+      x: antechamber.center.x,
+      fromY: antechamber.bounds.y + antechamber.bounds.height - 1,
+      toY: centralHall.bounds.y,
+    });
+  }
 
-    if (antechamber.side === "west") {
-      return createHorizontalConnector({
-        y: antechamber.center.y,
-        fromX: mainCorridor.bounds.x + mainCorridor.width - 1,
-        toX: centralHall.bounds.x,
-      });
-    }
+  if (antechamber.side === "south") {
+    return createVerticalConnector({
+      x: antechamber.center.x,
+      fromY: centralHall.bounds.y + centralHall.bounds.height - 1,
+      toY: antechamber.bounds.y,
+    });
+  }
 
+  if (antechamber.side === "west") {
     return createHorizontalConnector({
       y: antechamber.center.y,
-      fromX: centralHall.bounds.x + centralHall.bounds.width - 1,
-      toX: mainCorridor.bounds.x + mainCorridor.bounds.width - mainCorridor.width,
+      fromX: antechamber.bounds.x + antechamber.bounds.width - 1,
+      toX: centralHall.bounds.x,
     });
+  }
+
+  return createHorizontalConnector({
+    y: antechamber.center.y,
+    fromX: centralHall.bounds.x + centralHall.bounds.width - 1,
+    toX: antechamber.bounds.x,
   });
 }
 
-function createExternalRoomConnectorTiles({ externalRooms, mainCorridor }) {
-  return externalRooms.flatMap((externalRoom) => {
-    if (externalRoom.side === "north") {
-      return createVerticalConnector({
-        x: externalRoom.center.x,
-        fromY: externalRoom.bounds.y + externalRoom.bounds.height - 1,
-        toY: mainCorridor.bounds.y,
-      });
-    }
-
-    if (externalRoom.side === "south") {
-      return createVerticalConnector({
-        x: externalRoom.center.x,
-        fromY: mainCorridor.bounds.y + mainCorridor.bounds.height - 1,
-        toY: externalRoom.bounds.y,
-      });
-    }
-
-    return createHorizontalConnector({
-      y: externalRoom.center.y,
-      fromX: mainCorridor.bounds.x + mainCorridor.bounds.width - 1,
-      toX: externalRoom.bounds.x,
-    });
+function createCorridorConnectorTiles({ room, corridorTileSet }) {
+  const outwardRay = getOutwardRay(room);
+  const corridorTile = findFirstTileInSet({
+    start: outwardRay.start,
+    step: outwardRay.step,
+    tileSet: corridorTileSet,
+    limit: 12,
   });
+
+  if (!corridorTile) {
+    return [];
+  }
+
+  if (outwardRay.step.x !== 0) {
+    return createHorizontalConnector({
+      y: outwardRay.start.y,
+      fromX: outwardRay.start.x,
+      toX: corridorTile.x,
+    });
+  }
+
+  return createVerticalConnector({
+    x: outwardRay.start.x,
+    fromY: outwardRay.start.y,
+    toY: corridorTile.y,
+  });
+}
+
+function createExternalRoomConnectorTiles({ externalRooms, corridorTileSet }) {
+  return externalRooms.flatMap((externalRoom) => createCorridorConnectorTiles({
+    room: externalRoom,
+    corridorTileSet,
+  }));
+}
+
+function getOutwardRay(room) {
+  if (room.side === "north") {
+    return {
+      start: { x: room.center.x, y: room.bounds.y },
+      step: { x: 0, y: -1 },
+    };
+  }
+
+  if (room.side === "south") {
+    return {
+      start: { x: room.center.x, y: room.bounds.y + room.bounds.height - 1 },
+      step: { x: 0, y: 1 },
+    };
+  }
+
+  if (room.side === "west") {
+    return {
+      start: { x: room.bounds.x, y: room.center.y },
+      step: { x: -1, y: 0 },
+    };
+  }
+
+  return {
+    start: { x: room.bounds.x + room.bounds.width - 1, y: room.center.y },
+    step: { x: 1, y: 0 },
+  };
+}
+
+function findFirstTileInSet({ start, step, tileSet, limit }) {
+  let current = { ...start };
+
+  for (let index = 0; index <= limit; index += 1) {
+    if (tileSet.has(createTileKey(current))) {
+      return current;
+    }
+
+    current = {
+      x: current.x + step.x,
+      y: current.y + step.y,
+    };
+  }
+
+  return null;
 }
 
 function createVerticalConnector({ x, fromY, toY }) {
@@ -325,13 +433,16 @@ function createGrid(width, height, fill) {
   return Array.from({ length: height }, () => Array.from({ length: width }, () => fill));
 }
 
-function isInsideBounds(point, bounds) {
-  return (
-    point.x >= bounds.x &&
-    point.x < bounds.x + bounds.width &&
-    point.y >= bounds.y &&
-    point.y < bounds.y + bounds.height
-  );
+function getChebyshevDistanceToTiles(point, tiles) {
+  return Math.min(...tiles.map((tile) => Math.max(Math.abs(point.x - tile.x), Math.abs(point.y - tile.y))));
+}
+
+function createTileSet(tiles) {
+  return new Set(tiles.map(createTileKey));
+}
+
+function createTileKey(tile) {
+  return `${tile.x},${tile.y}`;
 }
 
 function isRoomInsideMap(room, width, height) {
