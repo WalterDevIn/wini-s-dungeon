@@ -1,31 +1,40 @@
 export function createRoomFeature({ id, type, x, y, width, height }) {
   const bounds = { x, y, width, height };
   const tiles = createRectTiles(bounds);
-  const center = getBoundsCenter(bounds);
 
-  return {
+  return createTileFeature({
     id,
     type,
     bounds,
     tiles,
-    center,
-    exits: createCardinalExits(bounds),
-  };
+  });
 }
 
 export function createCorridorFeature({ id, x, y, width, height, direction }) {
   const bounds = { x, y, width, height };
   const tiles = createRectTiles(bounds);
-  const center = getBoundsCenter(bounds);
+
+  return createTileFeature({
+    id,
+    type: "corridor",
+    bounds,
+    tiles,
+    direction,
+  });
+}
+
+export function createTileFeature({ id, type, tiles, bounds = getBoundsFromTiles(tiles), exits, ...extra }) {
+  const dedupedTiles = dedupeTiles(tiles);
+  const resolvedBounds = bounds ?? getBoundsFromTiles(dedupedTiles);
 
   return {
     id,
-    type: "corridor",
-    direction,
-    bounds,
-    tiles,
-    center,
-    exits: createCardinalExits(bounds),
+    type,
+    ...extra,
+    bounds: resolvedBounds,
+    tiles: dedupedTiles,
+    center: getBoundsCenter(resolvedBounds),
+    exits: exits ?? createCardinalExits(resolvedBounds),
   };
 }
 
@@ -46,6 +55,22 @@ export function createRectTiles(bounds) {
   }
 
   return tiles;
+}
+
+export function getBoundsFromTiles(tiles) {
+  const xs = tiles.map((tile) => tile.x);
+  const ys = tiles.map((tile) => tile.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX + 1,
+    height: maxY - minY + 1,
+  };
 }
 
 function createCardinalExits(bounds) {
@@ -73,4 +98,22 @@ function createCardinalExits(bounds) {
       y: center.y,
     },
   ];
+}
+
+function dedupeTiles(tiles) {
+  const seen = new Set();
+  const deduped = [];
+
+  for (const tile of tiles) {
+    const key = `${tile.x},${tile.y}`;
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    deduped.push(tile);
+  }
+
+  return deduped;
 }
