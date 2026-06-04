@@ -13,8 +13,8 @@ const generatedDungeon = generateDungeonMap({
     max: 10,
   },
   centralHall: {
-    width: 12,
-    height: 8,
+    width: 20,
+    height: 10,
   },
 });
 
