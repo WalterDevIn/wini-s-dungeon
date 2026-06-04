@@ -1,5 +1,6 @@
 import { createCorridorFeature, createRoomFeature } from "./mapFeatures.js";
 import { createDungeonMetadata } from "./mapMetadata.js";
+import { generatePalaceRingMap } from "./palaceRingGeneration.js";
 
 const WALL_TILE = "#";
 const FLOOR_TILE = ".";
@@ -7,6 +8,15 @@ const ROOM_ATTEMPT_LIMIT = 240;
 
 export function generateDungeonMap(config) {
   const resolvedConfig = resolveConfig(config);
+
+  if (resolvedConfig.layout === "palaceRing") {
+    return generatePalaceRingMap(resolvedConfig);
+  }
+
+  return generateClassicDungeonMap(resolvedConfig);
+}
+
+function generateClassicDungeonMap(resolvedConfig) {
   const random = createSeededRandom(resolvedConfig.seed);
   const grid = createGrid(resolvedConfig.width, resolvedConfig.height, WALL_TILE);
   const features = [];
@@ -104,6 +114,7 @@ export function generateDungeonMap(config) {
 function resolveConfig(config) {
   return {
     seed: config.seed ?? 1337,
+    layout: config.layout ?? "classic",
     width: config.width ?? 64,
     height: config.height ?? 40,
     tileSize: config.tileSize ?? 48,
@@ -111,6 +122,7 @@ function resolveConfig(config) {
       min: config.roomCount?.min ?? 6,
       max: config.roomCount?.max ?? 10,
     },
+    centralHall: config.centralHall,
   };
 }
 
