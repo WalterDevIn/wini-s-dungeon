@@ -269,7 +269,7 @@ function createExternalRooms({ nextId, mainCorridor, mapWidth, mapHeight }) {
 function createAntechamberConnectorTiles({ centralHall, antechambers, corridorTileSet }) {
   return antechambers.flatMap((antechamber) => [
     ...createCentralHallConnectorTiles({ centralHall, antechamber }),
-    ...createCorridorConnectorTiles({ room: antechamber, corridorTileSet }),
+    ...createCorridorConnectorTiles({ room: antechamber, corridorTileSet, direction: "outward" }),
   ]);
 }
 
@@ -305,11 +305,11 @@ function createCentralHallConnectorTiles({ centralHall, antechamber }) {
   });
 }
 
-function createCorridorConnectorTiles({ room, corridorTileSet }) {
-  const outwardRay = getOutwardRay(room);
+function createCorridorConnectorTiles({ room, corridorTileSet, direction }) {
+  const ray = direction === "inward" ? getInwardRay(room) : getOutwardRay(room);
   const corridorTile = findFirstTileInSet({
-    start: outwardRay.start,
-    step: outwardRay.step,
+    start: ray.start,
+    step: ray.step,
     tileSet: corridorTileSet,
     limit: 12,
   });
@@ -318,17 +318,17 @@ function createCorridorConnectorTiles({ room, corridorTileSet }) {
     return [];
   }
 
-  if (outwardRay.step.x !== 0) {
+  if (ray.step.x !== 0) {
     return createHorizontalConnector({
-      y: outwardRay.start.y,
-      fromX: outwardRay.start.x,
+      y: ray.start.y,
+      fromX: ray.start.x,
       toX: corridorTile.x,
     });
   }
 
   return createVerticalConnector({
-    x: outwardRay.start.x,
-    fromY: outwardRay.start.y,
+    x: ray.start.x,
+    fromY: ray.start.y,
     toY: corridorTile.y,
   });
 }
@@ -337,6 +337,7 @@ function createExternalRoomConnectorTiles({ externalRooms, corridorTileSet }) {
   return externalRooms.flatMap((externalRoom) => createCorridorConnectorTiles({
     room: externalRoom,
     corridorTileSet,
+    direction: "inward",
   }));
 }
 
@@ -365,6 +366,34 @@ function getOutwardRay(room) {
   return {
     start: { x: room.bounds.x + room.bounds.width - 1, y: room.center.y },
     step: { x: 1, y: 0 },
+  };
+}
+
+function getInwardRay(room) {
+  if (room.side === "north") {
+    return {
+      start: { x: room.center.x, y: room.bounds.y + room.bounds.height - 1 },
+      step: { x: 0, y: 1 },
+    };
+  }
+
+  if (room.side === "south") {
+    return {
+      start: { x: room.center.x, y: room.bounds.y },
+      step: { x: 0, y: -1 },
+    };
+  }
+
+  if (room.side === "west") {
+    return {
+      start: { x: room.bounds.x + room.bounds.width - 1, y: room.center.y },
+      step: { x: 1, y: 0 },
+    };
+  }
+
+  return {
+    start: { x: room.bounds.x, y: room.center.y },
+    step: { x: -1, y: 0 },
   };
 }
 
