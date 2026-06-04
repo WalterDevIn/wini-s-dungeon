@@ -1,4 +1,4 @@
-export function createRoomFeature({ id, type, x, y, width, height }) {
+export function createRoomFeature({ id, type, x, y, width, height, ...extra }) {
   const bounds = { x, y, width, height };
   const tiles = createRectTiles(bounds);
 
@@ -7,10 +7,11 @@ export function createRoomFeature({ id, type, x, y, width, height }) {
     type,
     bounds,
     tiles,
+    ...extra,
   });
 }
 
-export function createCorridorFeature({ id, x, y, width, height, direction }) {
+export function createCorridorFeature({ id, x, y, width, height, direction, ...extra }) {
   const bounds = { x, y, width, height };
   const tiles = createRectTiles(bounds);
 
@@ -20,6 +21,7 @@ export function createCorridorFeature({ id, x, y, width, height, direction }) {
     bounds,
     tiles,
     direction,
+    ...extra,
   });
 }
 
