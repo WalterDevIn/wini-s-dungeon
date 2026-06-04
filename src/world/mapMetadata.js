@@ -13,12 +13,12 @@ export function tileToEntityPosition(tile, tileSize) {
 }
 
 export function createDungeonMetadata({ tileSize, rooms, corridors, features }) {
-  const startRoom = rooms[0];
+  const startRoom = findRoomByType(rooms, "central_hall") ?? rooms[0];
   const farRooms = rooms.slice(1).sort((a, b) => {
     return getSquaredDistance(b.center, startRoom.center) - getSquaredDistance(a.center, startRoom.center);
   });
-  const endRoom = farRooms[0] ?? startRoom;
-  const encounterRooms = farRooms.length > 0 ? farRooms : rooms;
+  const endRoom = findRoomByType(rooms, "external_room") ?? farRooms[0] ?? startRoom;
+  const encounterRooms = getEncounterRooms(rooms, startRoom);
 
   return {
     rooms,
@@ -37,11 +37,28 @@ export function createDungeonMetadata({ tileSize, rooms, corridors, features }) 
   };
 }
 
+function getEncounterRooms(rooms, startRoom) {
+  const externalRooms = rooms.filter((room) => room.type === "external_room");
+
+  if (externalRooms.length > 0) {
+    return externalRooms;
+  }
+
+  const antechambers = rooms.filter((room) => room.type === "antechamber");
+
+  if (antechambers.length > 0) {
+    return antechambers;
+  }
+
+  return rooms.filter((room) => room.id !== startRoom.id);
+}
+
 function createEncounterSpawns(rooms, tileSize) {
   const creatureIds = ["rat", "bat", "goblinSkirmisher", "stoneCrawler"];
+  const spawnRooms = rooms.length > 0 ? rooms : [{ center: { x: 1, y: 1 }, bounds: { x: 1, y: 1, width: 1, height: 1 } }];
 
   return creatureIds.map((creatureId, index) => {
-    const room = rooms[index % rooms.length];
+    const room = spawnRooms[index % spawnRooms.length];
     const tile = pickSpawnTileInRoom(room, index);
 
     return {
@@ -68,6 +85,10 @@ function pickSpawnTileInRoom(room, index) {
     x: interiorMinX + (index % width),
     y: interiorMinY + (Math.floor(index / width) % height),
   };
+}
+
+function findRoomByType(rooms, type) {
+  return rooms.find((room) => room.type === type) ?? null;
 }
 
 function getSquaredDistance(a, b) {
