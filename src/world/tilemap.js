@@ -4,12 +4,17 @@ export const tileSize = 48;
 
 const generatedDungeon = generateDungeonMap({
   seed: 1337,
+  layout: "palaceRing",
   width: 64,
   height: 40,
   tileSize,
   roomCount: {
     min: 6,
     max: 10,
+  },
+  centralHall: {
+    width: 12,
+    height: 8,
   },
 });
 
