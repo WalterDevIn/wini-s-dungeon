@@ -18,26 +18,12 @@ export function generateClassicDungeonMap(resolvedConfig) {
   const features = [];
   const rooms = [];
   const corridors = [];
-  const startRoom = createStartRoom({ id: createFeatureId(features), resolvedConfig });
 
-  addClassicRoom({ room: startRoom, grid, rooms, features });
+  addClassicRoom({ room: createStartRoom({ id: createFeatureId(features), resolvedConfig }), grid, rooms, features });
   addGeneratedRooms({ resolvedConfig, random, grid, rooms, corridors, features });
   ensureLargeRoom({ resolvedConfig, random, grid, rooms, corridors, features });
 
-  return {
-    tilemap: Object.freeze({
-      tileSize: resolvedConfig.tileSize,
-      width: resolvedConfig.width,
-      height: resolvedConfig.height,
-      tiles: toTileRows(grid),
-    }),
-    metadata: Object.freeze(createDungeonMetadata({
-      tileSize: resolvedConfig.tileSize,
-      rooms: rooms.map(freezeFeature),
-      corridors: corridors.map(freezeFeature),
-      features: features.map(freezeFeature),
-    })),
-  };
+  return createGeneratedDungeon({ resolvedConfig, grid, rooms, corridors, features });
 }
 
 function createStartRoom({ id, resolvedConfig }) {
@@ -53,10 +39,8 @@ function createStartRoom({ id, resolvedConfig }) {
 
 function addGeneratedRooms({ resolvedConfig, random, grid, rooms, corridors, features }) {
   const targetRoomCount = randomInt(random, resolvedConfig.roomCount.min, resolvedConfig.roomCount.max);
-  let attempts = 0;
 
-  while (rooms.length < targetRoomCount && attempts < ROOM_ATTEMPT_LIMIT) {
-    attempts += 1;
+  for (let attempts = 0; rooms.length < targetRoomCount && attempts < ROOM_ATTEMPT_LIMIT; attempts += 1) {
     addCandidateRoom({ resolvedConfig, random, grid, rooms, corridors, features });
   }
 }
@@ -64,7 +48,7 @@ function addGeneratedRooms({ resolvedConfig, random, grid, rooms, corridors, fea
 function addCandidateRoom({ resolvedConfig, random, grid, rooms, corridors, features }) {
   const anchorRoom = rooms[randomInt(random, 0, rooms.length - 1)];
   const type = shouldCreateLargeRoom({ rooms, random }) ? "largeRoom" : "smallRoom";
-  const nextRoom = createCandidateRoom({
+  const room = createCandidateRoom({
     id: createFeatureId(features),
     type,
     anchorRoom,
@@ -73,11 +57,9 @@ function addCandidateRoom({ resolvedConfig, random, grid, rooms, corridors, feat
     mapHeight: resolvedConfig.height,
   });
 
-  if (!canPlaceRoom(nextRoom, rooms, resolvedConfig)) {
-    return;
+  if (canPlaceRoom(room, rooms, resolvedConfig)) {
+    connectAndAddRoom({ room, from: anchorRoom, grid, rooms, corridors, features });
   }
-
-  connectAndAddRoom({ room: nextRoom, from: anchorRoom, grid, rooms, corridors, features });
 }
 
 function ensureLargeRoom({ resolvedConfig, random, grid, rooms, corridors, features }) {
@@ -85,7 +67,7 @@ function ensureLargeRoom({ resolvedConfig, random, grid, rooms, corridors, featu
     return;
   }
 
-  const largeRoom = createFallbackLargeRoom({
+  const room = createFallbackLargeRoom({
     id: createFeatureId(features),
     rooms,
     random,
@@ -93,22 +75,31 @@ function ensureLargeRoom({ resolvedConfig, random, grid, rooms, corridors, featu
     mapHeight: resolvedConfig.height,
   });
 
-  if (largeRoom) {
-    connectAndAddRoom({ room: largeRoom, from: rooms[0], grid, rooms, corridors, features });
+  if (room) {
+    connectAndAddRoom({ room, from: rooms[0], grid, rooms, corridors, features });
   }
 }
 
 function connectAndAddRoom({ room, from, grid, rooms, corridors, features }) {
   const corridor = createCorridorBetweenRooms({ id: createFeatureId(features) + 1, from, to: room });
 
-  addClassicCorridor({ corridor, grid, corridors, features });
-  addClassicRoom({ room, grid, rooms, features });
-}
-
-function addClassicRoom({ room, grid, rooms, features }) {
+  addCorridor({ corridor, grid, corridors, features, paintTiles, floorTile: FLOOR_TILE });
   addRoom({ room, grid, rooms, features, paintTiles, floorTile: FLOOR_TILE });
 }
 
-function addClassicCorridor({ corridor, grid, corridors, features }) {
-  addCorridor({ corridor, grid, corridors, features, paintTiles, floorTile: FLOOR_TILE });
+function createGeneratedDungeon({ resolvedConfig, grid, rooms, corridors, features }) {
+  return {
+    tilemap: Object.freeze({
+      tileSize: resolvedConfig.tileSize,
+      width: resolvedConfig.width,
+      height: resolvedConfig.height,
+      tiles: toTileRows(grid),
+    }),
+    metadata: Object.freeze(createDungeonMetadata({
+      tileSize: resolvedConfig.tileSize,
+      rooms: rooms.map(freezeFeature),
+      corridors: corridors.map(freezeFeature),
+      features: features.map(freezeFeature),
+    })),
+  };
 }
