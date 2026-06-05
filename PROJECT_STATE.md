@@ -16,7 +16,9 @@ Se aplicó `fix/palace-ring-layout-shape`: el corredor principal ya no se genera
 
 Se aplicó `fix/palace-ring-layout-asymmetry`: el layout palacial reduce simetría visual. Las `antechamber` ya no se ubican obligatoriamente centradas ni una por cada pared; usan posiciones deterministas no centradas, con 1 a 2 posibles antesalas por lado cuando entran. Las `external_room` se intentan colocar adosadas al `main_corridor`, con conexión directa o conector corto como fallback. No se agregaron componentes, sistemas, commands ni events.
 
-El generador vive en `src/world/mapGeneration.js`, que actúa como entrypoint/dispatcher de layouts. El layout palacial específico vive en `src/world/palaceRingGeneration.js`. Los helpers de features viven en `src/world/mapFeatures.js`, que soporta features rectangulares y features desde tiles arbitrarios para regiones no rectangulares como `main_corridor`. Los helpers de metadata/spawns viven en `src/world/mapMetadata.js`, que prefiere `central_hall` como spawn del jugador y `external_room`/`antechamber` para spawns del encounter demo.
+Se aplicó `refactor/palace-ring-generation-modules`: `src/world/palaceRingGeneration.js` quedó como orquestador de menos de 100 líneas y el layout palacial fue dividido en módulos específicos: `palaceRingConfig`, `palaceRingCentralHall`, `palaceRingAntechambers`, `palaceRingCorridor`, `palaceRingExternalRooms` y `palaceRingConnectors`. También se extrajeron helpers compartidos de world en `mapGrid`, `mapGeometry` y `mapFeatureState` para eliminar duplicación con `mapGeneration.js`. No cambió gameplay ni se agregaron componentes, sistemas, commands ni events.
+
+El generador vive en `src/world/mapGeneration.js`, que actúa como entrypoint/dispatcher de layouts. `mapGeneration.js` despacha entre `classic` y `palaceRing`; ambos usan helpers compartidos de grid/geometría/feature state. El layout palacial específico vive en los módulos `src/world/palaceRing*.js`. Los helpers de features viven en `src/world/mapFeatures.js`, que soporta features rectangulares y features desde tiles arbitrarios. Los helpers de metadata/spawns viven en `src/world/mapMetadata.js`, que prefiere `central_hall` como spawn del jugador y `external_room`/`antechamber` para spawns del encounter demo.
 
 `createPlayer` recibe la posición del jugador desde app mediante `{ position }`. `createDemoEncounter` recibe `{ spawns }` y crea el encounter demo usando spawns derivados del dungeon generado. `createGameApp` importa `dungeonMetadata` desde `src/world/tilemap.js` y pasa `dungeonMetadata.playerSpawn` / `dungeonMetadata.encounterSpawns` a las factories de game.
 
@@ -111,7 +113,16 @@ Ninguno.
 
 - `src/world/tilemap.js`: exporta el tilemap generado con layout `palaceRing`, `tileSize`, `dungeonMetadata` y helpers de colisión.
 - `src/world/mapGeneration.js`: orquesta generación de dungeon y despacha entre layouts, incluyendo `classic` y `palaceRing`.
-- `src/world/palaceRingGeneration.js`: genera el layout palacial con `central_hall`, `antechamber`, `main_corridor` y `external_room`; el corredor principal contornea la máscara central, las antesalas están separadas con conectores puntuales y la distribución reduce simetría visual.
+- `src/world/palaceRingGeneration.js`: orquesta el layout palacial usando módulos específicos.
+- `src/world/palaceRingConfig.js`: contiene constantes y resolución de config del layout palacial.
+- `src/world/palaceRingCentralHall.js`: crea `central_hall`.
+- `src/world/palaceRingAntechambers.js`: crea `antechamber` asimétricas.
+- `src/world/palaceRingCorridor.js`: crea `main_corridor` desde la máscara central.
+- `src/world/palaceRingExternalRooms.js`: crea `external_room`.
+- `src/world/palaceRingConnectors.js`: crea conectores caminables entre regiones palaciales.
+- `src/world/mapGrid.js`: contiene helpers compartidos de grid.
+- `src/world/mapGeometry.js`: contiene helpers compartidos de geometría.
+- `src/world/mapFeatureState.js`: contiene helpers compartidos para registrar y congelar features.
 - `src/world/mapFeatures.js`: crea features rectangulares y features no rectangulares desde tiles con `id`, `type`, `bounds`, `tiles`, `center`, `exits` y metadata semántica adicional.
 - `src/world/mapMetadata.js`: deriva player spawn, encounter spawns y markers de stair up/down desde rooms generadas, prefiriendo regiones palaciales cuando existen.
 
@@ -163,12 +174,12 @@ Validar visual y jugablemente `feature/palace-ring-layout-v1`: central hall gran
 
 ## Decisiones recientes
 
-- Se implementó `fix/palace-ring-layout-asymmetry` sobre `feature/palace-ring-layout-v1`.
-- Las `antechamber` 3x3 usan posiciones deterministas no centradas y no se fuerza una por cada pared.
-- Las `antechamber` mantienen conexión caminable hacia `central_hall` y hacia `main_corridor`.
-- Las `external_room` intentan colocarse adosadas al `main_corridor`, reduciendo pasillitos artificiales.
-- El layout palacial mantiene tiles simples `#` y `.`; la identidad regional vive en `dungeonMetadata`.
-- No se agregaron componentes, sistemas, commands ni events.
+- Se implementó `refactor/palace-ring-generation-modules` sobre `feature/palace-ring-layout-v1`.
+- `palaceRingGeneration.js` quedó reducido a orquestador.
+- La generación palacial fue dividida en módulos específicos para config, central hall, antechambers, corridor, external rooms y connectors.
+- Se extrajeron `mapGrid`, `mapGeometry` y `mapFeatureState` para evitar duplicación de helpers entre layouts.
+- `mapGeneration.js` usa helpers compartidos y conserva el layout clásico.
+- No cambió gameplay ni se agregaron componentes, sistemas, commands ni events.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
 - No se usará CA como defensa central.
