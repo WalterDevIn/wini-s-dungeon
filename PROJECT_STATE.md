@@ -16,9 +16,9 @@ Se aplicó `fix/palace-ring-layout-shape`: el corredor principal ya no se genera
 
 Se aplicó `fix/palace-ring-layout-asymmetry`: el layout palacial reduce simetría visual. Las `antechamber` ya no se ubican obligatoriamente centradas ni una por cada pared; usan posiciones deterministas no centradas, con 1 a 2 posibles antesalas por lado cuando entran. Las `external_room` se intentan colocar adosadas al `main_corridor`, con conexión directa o conector corto como fallback. No se agregaron componentes, sistemas, commands ni events.
 
-Se aplicó `refactor/palace-ring-generation-modules`: `src/world/palaceRingGeneration.js` quedó como orquestador de menos de 100 líneas y el layout palacial fue dividido en módulos específicos: `palaceRingConfig`, `palaceRingCentralHall`, `palaceRingAntechambers`, `palaceRingCorridor`, `palaceRingExternalRooms` y `palaceRingConnectors`. También se extrajeron helpers compartidos de world en `mapGrid`, `mapGeometry` y `mapFeatureState` para eliminar duplicación con `mapGeneration.js`. No cambió gameplay ni se agregaron componentes, sistemas, commands ni events.
+Se aplicó `refactor/palace-ring-generation-modules`: `src/world/palaceRingGeneration.js` quedó como orquestador de menos de 100 líneas y el layout palacial fue dividido en módulos específicos: `palaceRingConfig`, `palaceRingCentralHall`, `palaceRingAntechambers`, `palaceRingCorridor`, `palaceRingExternalRooms` y `palaceRingConnectors`. También se extrajeron helpers compartidos de world en `mapGrid`, `mapGeometry` y `mapFeatureState` para evitar duplicación entre layouts. No cambió gameplay ni se agregaron componentes, sistemas, commands ni events.
 
-El generador vive en `src/world/mapGeneration.js`, que actúa como entrypoint/dispatcher de layouts. `mapGeneration.js` despacha entre `classic` y `palaceRing`; ambos usan helpers compartidos de grid/geometría/feature state. El layout palacial específico vive en los módulos `src/world/palaceRing*.js`. Los helpers de features viven en `src/world/mapFeatures.js`, que soporta features rectangulares y features desde tiles arbitrarios. Los helpers de metadata/spawns viven en `src/world/mapMetadata.js`, que prefiere `central_hall` como spawn del jugador y `external_room`/`antechamber` para spawns del encounter demo.
+Se aplicó `refactor/classic-map-generation-modules`: `src/world/mapGeneration.js` quedó como dispatcher/config común de menos de 100 líneas. El layout clásico fue dividido en `classicDungeonGeneration`, `classicDungeonConfig`, `classicDungeonRooms`, `classicDungeonCorridors` y `mapRandom`. Se preserva la API pública `generateDungeonMap(config)`, la compatibilidad con `layout: "classic"` y `layout: "palaceRing"`, el modelo `tilemap + dungeonMetadata` y los tiles simples `#`/`.`. No cambió gameplay ni se agregaron componentes, sistemas, commands ni events.
 
 `createPlayer` recibe la posición del jugador desde app mediante `{ position }`. `createDemoEncounter` recibe `{ spawns }` y crea el encounter demo usando spawns derivados del dungeon generado. `createGameApp` importa `dungeonMetadata` desde `src/world/tilemap.js` y pasa `dungeonMetadata.playerSpawn` / `dungeonMetadata.encounterSpawns` a las factories de game.
 
@@ -112,7 +112,12 @@ Ninguno.
 ## World existente
 
 - `src/world/tilemap.js`: exporta el tilemap generado con layout `palaceRing`, `tileSize`, `dungeonMetadata` y helpers de colisión.
-- `src/world/mapGeneration.js`: orquesta generación de dungeon y despacha entre layouts, incluyendo `classic` y `palaceRing`.
+- `src/world/mapGeneration.js`: dispatcher/config común de generación; delega en `classic` o `palaceRing`.
+- `src/world/classicDungeonGeneration.js`: orquesta el layout clásico.
+- `src/world/classicDungeonConfig.js`: contiene constantes del layout clásico.
+- `src/world/classicDungeonRooms.js`: crea y valida salas del layout clásico.
+- `src/world/classicDungeonCorridors.js`: crea corredores del layout clásico.
+- `src/world/mapRandom.js`: contiene random determinista y helpers relacionados.
 - `src/world/palaceRingGeneration.js`: orquesta el layout palacial usando módulos específicos.
 - `src/world/palaceRingConfig.js`: contiene constantes y resolución de config del layout palacial.
 - `src/world/palaceRingCentralHall.js`: crea `central_hall`.
@@ -154,6 +159,7 @@ Validar visual y jugablemente `feature/palace-ring-layout-v1`: central hall gran
 ## Riesgos actuales
 
 - El layout `palaceRing` es determinista y básico; no hay todavía validación formal de conectividad con flood fill ni tests automatizados.
+- El layout `classic` fue refactorizado a módulos; conviene verificarlo manualmente cambiando temporalmente `layout` durante desarrollo.
 - La asimetría actual es determinista por candidatos fijos; puede necesitar seed real cuando existan más variantes de piso.
 - El contorno por distancia Chebyshev es simple y puede necesitar refinamiento visual cuando haya más formas de sala.
 - La cámara no tiene smoothing, zoom ni tratamiento especial para mapas más pequeños que el viewport; es una cámara mínima determinista.
@@ -174,11 +180,11 @@ Validar visual y jugablemente `feature/palace-ring-layout-v1`: central hall gran
 
 ## Decisiones recientes
 
-- Se implementó `refactor/palace-ring-generation-modules` sobre `feature/palace-ring-layout-v1`.
-- `palaceRingGeneration.js` quedó reducido a orquestador.
-- La generación palacial fue dividida en módulos específicos para config, central hall, antechambers, corridor, external rooms y connectors.
-- Se extrajeron `mapGrid`, `mapGeometry` y `mapFeatureState` para evitar duplicación de helpers entre layouts.
-- `mapGeneration.js` usa helpers compartidos y conserva el layout clásico.
+- Se implementó `refactor/classic-map-generation-modules` sobre `feature/palace-ring-layout-v1`.
+- `mapGeneration.js` quedó reducido a dispatcher/config común.
+- El layout clásico fue dividido en módulos específicos para generation, config, rooms, corridors y random.
+- `generateDungeonMap(config)` mantiene su API pública.
+- `layout: "classic"` y `layout: "palaceRing"` siguen siendo las rutas soportadas.
 - No cambió gameplay ni se agregaron componentes, sistemas, commands ni events.
 - ECS será la fuente de verdad para entidades dinámicas.
 - El combate será en tiempo real pausado, no por turnos clásicos.
