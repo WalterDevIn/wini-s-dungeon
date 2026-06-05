@@ -1,6 +1,9 @@
-import { createCorridorFeature, createRoomFeature } from "./mapFeatures.js";
+import { createCorridorFeature, createRoomFeature, getBoundsFromTiles } from "./mapFeatures.js";
 import { createDungeonMetadata } from "./mapMetadata.js";
 import { generatePalaceRingMap } from "./palaceRingGeneration.js";
+import { createGrid, paintTiles, toTileRows } from "./mapGrid.js";
+import { boundsOverlap, expandBounds } from "./mapGeometry.js";
+import { addCorridor, addRoom, createFeatureId, freezeFeature } from "./mapFeatureState.js";
 
 const WALL_TILE = "#";
 const FLOOR_TILE = ".";
@@ -32,7 +35,7 @@ function generateClassicDungeonMap(resolvedConfig) {
     height: 5,
   });
 
-  addRoom({ room: startRoom, grid, rooms, features });
+  addClassicRoom({ room: startRoom, grid, rooms, features });
 
   const targetRoomCount = randomInt(
     random,
@@ -66,8 +69,8 @@ function generateClassicDungeonMap(resolvedConfig) {
       to: nextRoom,
     });
 
-    addCorridor({ corridor, grid, corridors, features });
-    addRoom({ room: nextRoom, grid, rooms, features });
+    addClassicCorridor({ corridor, grid, corridors, features });
+    addClassicRoom({ room: nextRoom, grid, rooms, features });
   }
 
   if (!rooms.some((room) => room.type === "largeRoom")) {
@@ -86,19 +89,17 @@ function generateClassicDungeonMap(resolvedConfig) {
         to: largeRoom,
       });
 
-      addCorridor({ corridor, grid, corridors, features });
-      addRoom({ room: largeRoom, grid, rooms, features });
+      addClassicCorridor({ corridor, grid, corridors, features });
+      addClassicRoom({ room: largeRoom, grid, rooms, features });
     }
   }
-
-  const tiles = grid.map((row) => row.join(""));
 
   return {
     tilemap: Object.freeze({
       tileSize: resolvedConfig.tileSize,
       width: resolvedConfig.width,
       height: resolvedConfig.height,
-      tiles,
+      tiles: toTileRows(grid),
     }),
     metadata: Object.freeze(
       createDungeonMetadata({
@@ -279,16 +280,12 @@ function createFallbackLargeRoom({ id, rooms, random, mapWidth, mapHeight }) {
   return null;
 }
 
-function addRoom({ room, grid, rooms, features }) {
-  paintTiles(grid, room.tiles, FLOOR_TILE);
-  rooms.push(room);
-  features.push(room);
+function addClassicRoom({ room, grid, rooms, features }) {
+  addRoom({ room, grid, rooms, features, paintTiles, floorTile: FLOOR_TILE });
 }
 
-function addCorridor({ corridor, grid, corridors, features }) {
-  paintTiles(grid, corridor.tiles, FLOOR_TILE);
-  corridors.push(corridor);
-  features.push(corridor);
+function addClassicCorridor({ corridor, grid, corridors, features }) {
+  addCorridor({ corridor, grid, corridors, features, paintTiles, floorTile: FLOOR_TILE });
 }
 
 function canPlaceRoom(room, rooms, config) {
@@ -312,18 +309,6 @@ function shouldCreateLargeRoom({ rooms, random }) {
   return random() < 0.25;
 }
 
-function createGrid(width, height, fill) {
-  return Array.from({ length: height }, () => Array.from({ length: width }, () => fill));
-}
-
-function paintTiles(grid, tiles, tile) {
-  for (const point of tiles) {
-    if (point.y >= 0 && point.y < grid.length && point.x >= 0 && point.x < grid[0].length) {
-      grid[point.y][point.x] = tile;
-    }
-  }
-}
-
 function pickDirection(random) {
   const directions = ["north", "south", "west", "east"];
   return directions[randomInt(random, 0, directions.length - 1)];
@@ -339,40 +324,6 @@ function createSeededRandom(seed) {
   return function random() {
     state = (state * 1664525 + 1013904223) >>> 0;
     return state / 0x100000000;
-  };
-}
-
-function boundsOverlap(a, b) {
-  return !(
-    a.x + a.width <= b.x ||
-    b.x + b.width <= a.x ||
-    a.y + a.height <= b.y ||
-    b.y + b.height <= a.y
-  );
-}
-
-function expandBounds(bounds, amount) {
-  return {
-    x: bounds.x - amount,
-    y: bounds.y - amount,
-    width: bounds.width + amount * 2,
-    height: bounds.height + amount * 2,
-  };
-}
-
-function getBoundsFromTiles(tiles) {
-  const xs = tiles.map((tile) => tile.x);
-  const ys = tiles.map((tile) => tile.y);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
-
-  return {
-    x: minX,
-    y: minY,
-    width: maxX - minX + 1,
-    height: maxY - minY + 1,
   };
 }
 
@@ -392,20 +343,6 @@ function dedupeTiles(tiles) {
   }
 
   return deduped;
-}
-
-function freezeFeature(feature) {
-  return Object.freeze({
-    ...feature,
-    bounds: Object.freeze({ ...feature.bounds }),
-    center: Object.freeze({ ...feature.center }),
-    tiles: Object.freeze(feature.tiles.map((tile) => Object.freeze({ ...tile }))),
-    exits: Object.freeze(feature.exits.map((exit) => Object.freeze({ ...exit }))),
-  });
-}
-
-function createFeatureId(features) {
-  return features.length + 1;
 }
 
 function clamp(value, min, max) {
