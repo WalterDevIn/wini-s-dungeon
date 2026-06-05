@@ -6,77 +6,61 @@ export function createAntechamberConnectorTiles({ centralHall, antechambers, cor
 }
 
 export function createExternalRoomConnectorTiles({ externalRooms, corridorTileSet }) {
-  return externalRooms.flatMap((externalRoom) => createCorridorConnectorTiles({
-    room: externalRoom,
+  return externalRooms.flatMap((room) => createCorridorConnectorTiles({
+    room,
     corridorTileSet,
     direction: "inward",
   }));
 }
 
 function createCentralHallConnectorTiles({ centralHall, antechamber }) {
-  if (antechamber.side === "north") {
+  const side = antechamber.side;
+
+  if (side === "north" || side === "south") {
     return createVerticalConnector({
       x: antechamber.center.x,
-      fromY: antechamber.bounds.y + antechamber.bounds.height - 1,
-      toY: centralHall.bounds.y,
-    });
-  }
-
-  if (antechamber.side === "south") {
-    return createVerticalConnector({
-      x: antechamber.center.x,
-      fromY: centralHall.bounds.y + centralHall.bounds.height - 1,
-      toY: antechamber.bounds.y,
-    });
-  }
-
-  if (antechamber.side === "west") {
-    return createHorizontalConnector({
-      y: antechamber.center.y,
-      fromX: antechamber.bounds.x + antechamber.bounds.width - 1,
-      toX: centralHall.bounds.x,
+      fromY: side === "north" ? antechamber.bounds.y + antechamber.bounds.height - 1 : centralHall.bounds.y + centralHall.bounds.height - 1,
+      toY: side === "north" ? centralHall.bounds.y : antechamber.bounds.y,
     });
   }
 
   return createHorizontalConnector({
     y: antechamber.center.y,
-    fromX: centralHall.bounds.x + centralHall.bounds.width - 1,
-    toX: antechamber.bounds.x,
+    fromX: side === "west" ? antechamber.bounds.x + antechamber.bounds.width - 1 : centralHall.bounds.x + centralHall.bounds.width - 1,
+    toX: side === "west" ? centralHall.bounds.x : antechamber.bounds.x,
   });
 }
 
 function createCorridorConnectorTiles({ room, corridorTileSet, direction }) {
-  const ray = direction === "inward" ? getInwardRay(room) : getOutwardRay(room);
+  const ray = createRay(room, direction);
   const corridorTile = findFirstTileInSet({ start: ray.start, step: ray.step, tileSet: corridorTileSet });
 
   if (!corridorTile) {
     return [];
   }
 
-  if (ray.step.x !== 0) {
-    return createHorizontalConnector({ y: ray.start.y, fromX: ray.start.x, toX: corridorTile.x });
-  }
-
-  return createVerticalConnector({ x: ray.start.x, fromY: ray.start.y, toY: corridorTile.y });
+  return ray.step.x !== 0
+    ? createHorizontalConnector({ y: ray.start.y, fromX: ray.start.x, toX: corridorTile.x })
+    : createVerticalConnector({ x: ray.start.x, fromY: ray.start.y, toY: corridorTile.y });
 }
 
-function getOutwardRay(room) {
+function createRay(room, direction) {
+  const outward = direction === "outward";
+  const b = room.bounds;
+  const c = room.center;
   const rays = {
-    north: { start: { x: room.center.x, y: room.bounds.y }, step: { x: 0, y: -1 } },
-    south: { start: { x: room.center.x, y: room.bounds.y + room.bounds.height - 1 }, step: { x: 0, y: 1 } },
-    west: { start: { x: room.bounds.x, y: room.center.y }, step: { x: -1, y: 0 } },
-    east: { start: { x: room.bounds.x + room.bounds.width - 1, y: room.center.y }, step: { x: 1, y: 0 } },
-  };
-
-  return rays[room.side];
-}
-
-function getInwardRay(room) {
-  const rays = {
-    north: { start: { x: room.center.x, y: room.bounds.y + room.bounds.height - 1 }, step: { x: 0, y: 1 } },
-    south: { start: { x: room.center.x, y: room.bounds.y }, step: { x: 0, y: -1 } },
-    west: { start: { x: room.bounds.x + room.bounds.width - 1, y: room.center.y }, step: { x: 1, y: 0 } },
-    east: { start: { x: room.bounds.x, y: room.center.y }, step: { x: -1, y: 0 } },
+    north: outward
+      ? { start: { x: c.x, y: b.y }, step: { x: 0, y: -1 } }
+      : { start: { x: c.x, y: b.y + b.height - 1 }, step: { x: 0, y: 1 } },
+    south: outward
+      ? { start: { x: c.x, y: b.y + b.height - 1 }, step: { x: 0, y: 1 } }
+      : { start: { x: c.x, y: b.y }, step: { x: 0, y: -1 } },
+    west: outward
+      ? { start: { x: b.x, y: c.y }, step: { x: -1, y: 0 } }
+      : { start: { x: b.x + b.width - 1, y: c.y }, step: { x: 1, y: 0 } },
+    east: outward
+      ? { start: { x: b.x + b.width - 1, y: c.y }, step: { x: 1, y: 0 } }
+      : { start: { x: b.x, y: c.y }, step: { x: -1, y: 0 } },
   };
 
   return rays[room.side];
@@ -97,21 +81,15 @@ function findFirstTileInSet({ start, step, tileSet, limit = 12 }) {
 }
 
 function createVerticalConnector({ x, fromY, toY }) {
-  const tiles = [];
-
-  for (let y = Math.min(fromY, toY); y <= Math.max(fromY, toY); y += 1) {
-    tiles.push({ x, y });
-  }
-
-  return tiles;
+  return Array.from({ length: Math.abs(toY - fromY) + 1 }, (_, index) => ({
+    x,
+    y: Math.min(fromY, toY) + index,
+  }));
 }
 
 function createHorizontalConnector({ y, fromX, toX }) {
-  const tiles = [];
-
-  for (let x = Math.min(fromX, toX); x <= Math.max(fromX, toX); x += 1) {
-    tiles.push({ x, y });
-  }
-
-  return tiles;
+  return Array.from({ length: Math.abs(toX - fromX) + 1 }, (_, index) => ({
+    x: Math.min(fromX, toX) + index,
+    y,
+  }));
 }
