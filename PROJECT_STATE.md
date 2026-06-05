@@ -14,6 +14,8 @@ Se aplicó `feature/palace-ring-layout-v1`: el generador soporta layout palacial
 
 Se aplicó `fix/palace-ring-layout-shape`: el corredor principal ya no se genera como anillo rectangular literal por bounding box. Ahora se construye desde una máscara de tiles ocupados por `central_hall + antechamber` usando distancia Chebyshev local, con ancho 2 y separación de 1 tile. Las antesalas 3x3 quedan separadas de la sala principal y tienen dos conexiones caminables explícitas: una hacia `central_hall` y otra hacia `main_corridor`. La `central_hall` fue agrandada a 20x10 y se agregaron más candidatos de `external_room` alrededor del corredor. No se agregaron componentes, sistemas, commands ni events.
 
+Se aplicó `fix/palace-ring-layout-asymmetry`: el layout palacial reduce simetría visual. Las `antechamber` ya no se ubican obligatoriamente centradas ni una por cada pared; usan posiciones deterministas no centradas, con 1 a 2 posibles antesalas por lado cuando entran. Las `external_room` se intentan colocar adosadas al `main_corridor`, con conexión directa o conector corto como fallback. No se agregaron componentes, sistemas, commands ni events.
+
 El generador vive en `src/world/mapGeneration.js`, que actúa como entrypoint/dispatcher de layouts. El layout palacial específico vive en `src/world/palaceRingGeneration.js`. Los helpers de features viven en `src/world/mapFeatures.js`, que soporta features rectangulares y features desde tiles arbitrarios para regiones no rectangulares como `main_corridor`. Los helpers de metadata/spawns viven en `src/world/mapMetadata.js`, que prefiere `central_hall` como spawn del jugador y `external_room`/`antechamber` para spawns del encounter demo.
 
 `createPlayer` recibe la posición del jugador desde app mediante `{ position }`. `createDemoEncounter` recibe `{ spawns }` y crea el encounter demo usando spawns derivados del dungeon generado. `createGameApp` importa `dungeonMetadata` desde `src/world/tilemap.js` y pasa `dungeonMetadata.playerSpawn` / `dungeonMetadata.encounterSpawns` a las factories de game.
@@ -109,7 +111,7 @@ Ninguno.
 
 - `src/world/tilemap.js`: exporta el tilemap generado con layout `palaceRing`, `tileSize`, `dungeonMetadata` y helpers de colisión.
 - `src/world/mapGeneration.js`: orquesta generación de dungeon y despacha entre layouts, incluyendo `classic` y `palaceRing`.
-- `src/world/palaceRingGeneration.js`: genera el layout palacial con `central_hall`, `antechamber`, `main_corridor` y `external_room`; el corredor principal contornea la máscara central y las antesalas están separadas con conectores puntuales.
+- `src/world/palaceRingGeneration.js`: genera el layout palacial con `central_hall`, `antechamber`, `main_corridor` y `external_room`; el corredor principal contornea la máscara central, las antesalas están separadas con conectores puntuales y la distribución reduce simetría visual.
 - `src/world/mapFeatures.js`: crea features rectangulares y features no rectangulares desde tiles con `id`, `type`, `bounds`, `tiles`, `center`, `exits` y metadata semántica adicional.
 - `src/world/mapMetadata.js`: deriva player spawn, encounter spawns y markers de stair up/down desde rooms generadas, prefiriendo regiones palaciales cuando existen.
 
@@ -136,11 +138,12 @@ Ninguno.
 
 ## Próximo objetivo
 
-Validar visual y jugablemente `feature/palace-ring-layout-v1`: central hall grande, antechambers separadas, corredor por contorno, external rooms, spawns, cámara, colisión y combate en salas/pasillos. Luego decidir si conviene mejorar la generación palacial con arcos parciales, pasillos de acceso, subpasillos, puertas o interacción de escaleras.
+Validar visual y jugablemente `feature/palace-ring-layout-v1`: central hall grande, antechambers separadas y asimétricas, corredor por contorno, external rooms adosadas, spawns, cámara, colisión y combate en salas/pasillos. Luego decidir si conviene mejorar la generación palacial con arcos parciales, pasillos de acceso, subpasillos, puertas o interacción de escaleras.
 
 ## Riesgos actuales
 
 - El layout `palaceRing` es determinista y básico; no hay todavía validación formal de conectividad con flood fill ni tests automatizados.
+- La asimetría actual es determinista por candidatos fijos; puede necesitar seed real cuando existan más variantes de piso.
 - El contorno por distancia Chebyshev es simple y puede necesitar refinamiento visual cuando haya más formas de sala.
 - La cámara no tiene smoothing, zoom ni tratamiento especial para mapas más pequeños que el viewport; es una cámara mínima determinista.
 - La IA persigue en línea recta y no tiene pathfinding; con mapas generados y pasillos puede atascarse o perseguir mal hasta Milestone 7+ o pathfinding futuro.
@@ -160,12 +163,10 @@ Validar visual y jugablemente `feature/palace-ring-layout-v1`: central hall gran
 
 ## Decisiones recientes
 
-- Se implementó `fix/palace-ring-layout-shape` sobre `feature/palace-ring-layout-v1`.
-- `central_hall` fue agrandada a 20x10.
-- Las `antechamber` 3x3 ya no están pegadas directamente a la sala principal; se conectan con aberturas puntuales.
-- Cada `antechamber` tiene conexión caminable hacia `central_hall` y hacia `main_corridor`.
-- `main_corridor` contornea la figura `central_hall + antechamber` usando distancia Chebyshev local y mantiene ancho 2.
-- Se agregaron más candidatos de `external_room` alrededor del corredor.
+- Se implementó `fix/palace-ring-layout-asymmetry` sobre `feature/palace-ring-layout-v1`.
+- Las `antechamber` 3x3 usan posiciones deterministas no centradas y no se fuerza una por cada pared.
+- Las `antechamber` mantienen conexión caminable hacia `central_hall` y hacia `main_corridor`.
+- Las `external_room` intentan colocarse adosadas al `main_corridor`, reduciendo pasillitos artificiales.
 - El layout palacial mantiene tiles simples `#` y `.`; la identidad regional vive en `dungeonMetadata`.
 - No se agregaron componentes, sistemas, commands ni events.
 - ECS será la fuente de verdad para entidades dinámicas.
