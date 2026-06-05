@@ -24,6 +24,8 @@ export function generatePalaceRingMap(config) {
   const antechambers = createAntechambers({
     nextId: createFeatureId(features),
     centralHall,
+    mapWidth: resolvedConfig.width,
+    mapHeight: resolvedConfig.height,
   });
 
   for (const antechamber of antechambers) {
@@ -107,42 +109,65 @@ function createCentralHall({ id, config }) {
   });
 }
 
-function createAntechambers({ nextId, centralHall }) {
+function createAntechambers({ nextId, centralHall, mapWidth, mapHeight }) {
   const hall = centralHall.bounds;
-  const middleX = centralHall.center.x;
-  const middleY = centralHall.center.y;
   const offset = ANTECHAMBER_SIZE + ANTECHAMBER_GAP;
-
-  return [
-    createAntechamber({
-      id: nextId,
-      x: middleX - 1,
-      y: hall.y - offset,
+  const candidates = [
+    {
       side: "north",
-      attachedTo: centralHall.id,
-    }),
-    createAntechamber({
-      id: nextId + 1,
-      x: middleX - 1,
-      y: hall.y + hall.height + ANTECHAMBER_GAP,
+      x: hall.x + 3,
+      y: hall.y - offset,
+    },
+    {
+      side: "north",
+      x: hall.x + hall.width - 6,
+      y: hall.y - offset,
+    },
+    {
       side: "south",
-      attachedTo: centralHall.id,
-    }),
-    createAntechamber({
-      id: nextId + 2,
-      x: hall.x - offset,
-      y: middleY - 1,
+      x: hall.x + 8,
+      y: hall.y + hall.height + ANTECHAMBER_GAP,
+    },
+    {
       side: "west",
-      attachedTo: centralHall.id,
-    }),
-    createAntechamber({
-      id: nextId + 3,
-      x: hall.x + hall.width + ANTECHAMBER_GAP,
-      y: middleY - 1,
+      x: hall.x - offset,
+      y: hall.y + 1,
+    },
+    {
+      side: "west",
+      x: hall.x - offset,
+      y: hall.y + hall.height - 4,
+    },
+    {
       side: "east",
-      attachedTo: centralHall.id,
-    }),
+      x: hall.x + hall.width + ANTECHAMBER_GAP,
+      y: hall.y + 5,
+    },
   ];
+
+  const accepted = [];
+
+  for (const candidate of candidates) {
+    const antechamber = createAntechamber({
+      id: nextId + accepted.length,
+      x: candidate.x,
+      y: candidate.y,
+      side: candidate.side,
+      attachedTo: centralHall.id,
+    });
+
+    if (!isRoomInsideMap(antechamber.bounds, mapWidth, mapHeight)) {
+      continue;
+    }
+
+    if (accepted.some((existing) => boundsOverlap(antechamber.bounds, existing.bounds))) {
+      continue;
+    }
+
+    accepted.push(antechamber);
+  }
+
+  return accepted;
 }
 
 function createAntechamber({ id, x, y, side, attachedTo }) {
@@ -194,67 +219,61 @@ function createExternalRooms({ nextId, mainCorridor, mapWidth, mapHeight }) {
   const candidates = [
     {
       side: "north",
-      width: 6,
+      width: 5,
       height: 4,
-      x: ring.x + 4,
-      y: ring.y - 5,
+      x: ring.x + 3,
+      y: ring.y - 4,
     },
     {
       side: "north",
+      width: 8,
+      height: 4,
+      x: ring.x + 18,
+      y: ring.y - 4,
+    },
+    {
+      side: "east",
+      width: 5,
+      height: 6,
+      x: ring.x + ring.width,
+      y: ring.y + 4,
+    },
+    {
+      side: "south",
+      width: 9,
+      height: 4,
+      x: ring.x + 8,
+      y: ring.y + ring.height,
+    },
+    {
+      side: "south",
       width: 6,
       height: 4,
-      x: ring.x + ring.width - 10,
-      y: ring.y - 5,
-    },
-    {
-      side: "east",
-      width: 5,
-      height: 5,
-      x: ring.x + ring.width + 1,
-      y: ring.y + 5,
-    },
-    {
-      side: "east",
-      width: 5,
-      height: 5,
-      x: ring.x + ring.width + 1,
-      y: ring.y + ring.height - 10,
-    },
-    {
-      side: "south",
-      width: 7,
-      height: 4,
-      x: ring.x + 4,
-      y: ring.y + ring.height + 1,
-    },
-    {
-      side: "south",
-      width: 7,
-      height: 4,
-      x: ring.x + ring.width - 11,
-      y: ring.y + ring.height + 1,
+      x: ring.x + ring.width - 9,
+      y: ring.y + ring.height,
     },
     {
       side: "west",
       width: 5,
-      height: 5,
-      x: ring.x - 6,
-      y: ring.y + 5,
-    },
-    {
-      side: "west",
-      width: 5,
-      height: 5,
-      x: ring.x - 6,
-      y: ring.y + ring.height - 10,
+      height: 7,
+      x: ring.x - 5,
+      y: ring.y + 10,
     },
   ];
+  const accepted = [];
 
-  return candidates
-    .filter((candidate) => isRoomInsideMap(candidate, mapWidth, mapHeight))
-    .map((candidate, index) =>
+  for (const candidate of candidates) {
+    if (!isRoomInsideMap(candidate, mapWidth, mapHeight)) {
+      continue;
+    }
+
+    if (accepted.some((existing) => boundsOverlap(candidate, existing.bounds))) {
+      continue;
+    }
+
+    accepted.push(
       createRoomFeature({
-        id: nextId + index,
+        id: nextId + accepted.length,
         type: "external_room",
         x: candidate.x,
         y: candidate.y,
@@ -264,6 +283,9 @@ function createExternalRooms({ nextId, mainCorridor, mapWidth, mapHeight }) {
         connectedTo: mainCorridor.id,
       }),
     );
+  }
+
+  return accepted;
 }
 
 function createAntechamberConnectorTiles({ centralHall, antechambers, corridorTileSet }) {
@@ -476,6 +498,15 @@ function createTileKey(tile) {
 
 function isRoomInsideMap(room, width, height) {
   return room.x > 0 && room.y > 0 && room.x + room.width < width - 1 && room.y + room.height < height - 1;
+}
+
+function boundsOverlap(a, b) {
+  return !(
+    a.x + a.width <= b.x ||
+    b.x + b.width <= a.x ||
+    a.y + a.height <= b.y ||
+    b.y + b.height <= a.y
+  );
 }
 
 function expandBounds(bounds, amount) {
