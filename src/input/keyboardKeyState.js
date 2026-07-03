@@ -4,6 +4,7 @@ export function createKeyboardKeyState({ movementKeys }) {
   const pressedCodes = new Set();
   const pressedVisualKeys = new Set();
   let tacticalToggleRequested = false;
+  let cameraToggleRequested = false;
 
   function handleKeyDown(event) {
     if (!isTrackedKey(event, movementKeys)) {
@@ -12,6 +13,10 @@ export function createKeyboardKeyState({ movementKeys }) {
 
     if (event.code === "Space" && !pressedCodes.has("Space")) {
       tacticalToggleRequested = true;
+    }
+
+    if (event.code === "Tab" && !pressedCodes.has("Tab")) {
+      cameraToggleRequested = true;
     }
 
     pressedCodes.add(event.code);
@@ -47,12 +52,19 @@ export function createKeyboardKeyState({ movementKeys }) {
     return wasRequested;
   }
 
+  function consumeCameraToggleIntent() {
+    const wasRequested = cameraToggleRequested;
+    cameraToggleRequested = false;
+    return wasRequested;
+  }
+
   return {
     pressedCodes,
     pressedVisualKeys,
     handleKeyDown,
     handleKeyUp,
     consumeTacticalToggleIntent,
+    consumeCameraToggleIntent,
   };
 }
 
