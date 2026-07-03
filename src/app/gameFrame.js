@@ -13,6 +13,10 @@ import {
 } from "./commandMapper.js";
 import { createAimIntent } from "./aimIntent.js";
 
+const RENDER_MODE = Object.freeze({
+  FirstPerson: "firstPerson",
+  TopDown: "topDown",
+});
 const FIRST_PERSON_MOUSE_SENSITIVITY = 0.004;
 const FIRST_PERSON_PITCH_SENSITIVITY = 0.002;
 const MAX_FIRST_PERSON_PITCH = 0.35;
@@ -32,6 +36,11 @@ export function runGameFrame({
   frameState.lastFrameTime = currentTime;
 
   const mouseSnapshot = mouseInput.getSnapshot();
+
+  if (keyboardInput.consumeCameraToggleIntent()) {
+    toggleRenderMode(frameState);
+  }
+
   updateFirstPersonCameraState(frameState, mouseSnapshot);
 
   const camera = createCurrentCameraSnapshot({
@@ -94,7 +103,7 @@ export function runGameFrame({
 function createCurrentCameraSnapshot({ world, tilemap, renderer, mouseSnapshot, frameState }) {
   const focusPoint = getPlayerCenterPoint(world);
 
-  if (frameState.renderMode === "firstPerson") {
+  if (frameState.renderMode === RENDER_MODE.FirstPerson) {
     return createFirstPersonCameraSnapshot({
       focusPoint,
       viewport: renderer.getViewport(),
@@ -112,7 +121,7 @@ function createCurrentCameraSnapshot({ world, tilemap, renderer, mouseSnapshot, 
 }
 
 function updateFirstPersonCameraState(frameState, mouseSnapshot) {
-  if (frameState.renderMode !== "firstPerson") {
+  if (frameState.renderMode !== RENDER_MODE.FirstPerson) {
     return;
   }
 
@@ -123,6 +132,12 @@ function updateFirstPersonCameraState(frameState, mouseSnapshot) {
     -MAX_FIRST_PERSON_PITCH,
     MAX_FIRST_PERSON_PITCH,
   );
+}
+
+function toggleRenderMode(frameState) {
+  frameState.renderMode = frameState.renderMode === RENDER_MODE.FirstPerson
+    ? RENDER_MODE.TopDown
+    : RENDER_MODE.FirstPerson;
 }
 
 function clamp(value, min, max) {
