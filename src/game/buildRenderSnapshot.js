@@ -1,4 +1,4 @@
-import { getComponent, queryEntities } from "../ecs/world.js";
+import { getComponent, hasComponent, queryEntities } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
 
 const WINDUP_PHASE = "windup";
@@ -26,6 +26,7 @@ function buildRenderableEntitySnapshots(world) {
     return {
       position: { ...position },
       renderable: { ...renderable },
+      isPlayer: hasComponent(world, entityId, ComponentType.PlayerControlled),
     };
   });
 }
