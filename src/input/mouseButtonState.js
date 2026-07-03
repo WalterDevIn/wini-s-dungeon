@@ -5,6 +5,7 @@ export function createMouseButtonState({ pointerState }) {
 
   function handleMouseDown(event) {
     pointerState.updatePointerPosition(event);
+    requestPointerLock(event.target);
     pressedButtons.add(event.button);
 
     if (event.button === 0) {
@@ -52,4 +53,12 @@ export function createMouseButtonState({ pointerState }) {
     consumeSecondaryClickIntent,
     getSnapshot,
   };
+}
+
+function requestPointerLock(target) {
+  if (document.pointerLockElement || !target?.requestPointerLock) {
+    return;
+  }
+
+  target.requestPointerLock();
 }
