@@ -1,3 +1,6 @@
+const FIRST_PERSON_FOV = Math.PI / 3;
+const FIRST_PERSON_TARGET_DISTANCE = 1024;
+
 export function createCameraSnapshot({ focusPoint, pointer, viewport, tilemap }) {
   const mapWidth = tilemap.width * tilemap.tileSize;
   const mapHeight = tilemap.height * tilemap.tileSize;
@@ -5,6 +8,7 @@ export function createCameraSnapshot({ focusPoint, pointer, viewport, tilemap })
   const viewportHeight = viewport.height;
   const cameraCenter = getCameraCenter({ focusPoint, pointer, viewport });
   const unclampedCamera = {
+    mode: "topDown",
     x: cameraCenter.x - viewportWidth / 2,
     y: cameraCenter.y - viewportHeight / 2,
     width: viewportWidth,
@@ -17,6 +21,20 @@ export function createCameraSnapshot({ focusPoint, pointer, viewport, tilemap })
   });
 }
 
+export function createFirstPersonCameraSnapshot({ focusPoint, viewport, yaw, pitch }) {
+  return {
+    mode: "firstPerson",
+    x: focusPoint.x - viewport.width / 2,
+    y: focusPoint.y - viewport.height / 2,
+    width: viewport.width,
+    height: viewport.height,
+    position: { ...focusPoint },
+    yaw,
+    pitch,
+    fov: FIRST_PERSON_FOV,
+  };
+}
+
 export function worldToScreen(camera, worldPoint) {
   return {
     x: worldPoint.x - camera.x,
@@ -25,6 +43,10 @@ export function worldToScreen(camera, worldPoint) {
 }
 
 export function screenToWorld(camera, screenPoint) {
+  if (camera.mode === "firstPerson") {
+    return firstPersonScreenToWorld(camera, screenPoint);
+  }
+
   return {
     x: screenPoint.x + camera.x,
     y: screenPoint.y + camera.y,
@@ -37,6 +59,18 @@ export function clampCameraToTilemap(camera, mapSize) {
     ...camera,
     x: clampAxis(camera.x, camera.width, mapSize.width),
     y: clampAxis(camera.y, camera.height, mapSize.height),
+  };
+}
+
+function firstPersonScreenToWorld(camera, screenPoint) {
+  const screenX = screenPoint?.hasPosition ? screenPoint.x : camera.width / 2;
+  const normalizedX = screenX / camera.width - 0.5;
+  const angle = camera.yaw + normalizedX * camera.fov;
+
+  return {
+    x: camera.position.x + Math.cos(angle) * FIRST_PERSON_TARGET_DISTANCE,
+    y: camera.position.y + Math.sin(angle) * FIRST_PERSON_TARGET_DISTANCE,
+    hasPosition: true,
   };
 }
 
