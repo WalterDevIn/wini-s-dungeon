@@ -54,6 +54,7 @@ export function createKeyboardInput(target = window) {
   return {
     getMovementIntent,
     consumeTacticalToggleIntent: keyState.consumeTacticalToggleIntent,
+    consumeCameraToggleIntent: keyState.consumeCameraToggleIntent,
     getSnapshot,
   };
 }
