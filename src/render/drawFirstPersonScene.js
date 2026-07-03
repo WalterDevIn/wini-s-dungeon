@@ -135,7 +135,6 @@ function castRay(tilemap, origin, angle) {
     y: Math.sin(angle),
   };
   let previousTileX = Math.floor(origin.x / tilemap.tileSize);
-  let previousTileY = Math.floor(origin.y / tilemap.tileSize);
 
   for (let distance = 0; distance <= MAX_RAY_DISTANCE; distance += RAY_STEP) {
     const x = origin.x + rayDirection.x * distance;
@@ -151,7 +150,6 @@ function castRay(tilemap, origin, angle) {
     }
 
     previousTileX = tileX;
-    previousTileY = tileY;
   }
 
   return {
@@ -177,7 +175,9 @@ function getScaledViewport(camera, pixelRatio) {
 
 function getWallShade(distance, axis) {
   const shade = Math.max(38, 150 - distance * 0.12);
-  return axis === "x" ? shade : shade * 0.8;
+  const shadedValue = axis === "x" ? shade : shade * 0.8;
+
+  return Math.floor(shadedValue);
 }
 
 function getDistanceToCamera(entity, camera) {
