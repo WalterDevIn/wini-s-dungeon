@@ -2,12 +2,20 @@ import { buildRenderSnapshot } from "../game/buildRenderSnapshot.js";
 import { buildUiSnapshot } from "../game/buildUiSnapshot.js";
 import { getPlayerCenterPoint } from "../game/playerQueries.js";
 import { runSimulationStep } from "../simulation/runSimulationStep.js";
-import { createCameraSnapshot, screenToWorld } from "../render/camera.js";
+import {
+  createCameraSnapshot,
+  createFirstPersonCameraSnapshot,
+  screenToWorld,
+} from "../render/camera.js";
 import {
   collectCommandsFromInput,
   consumeAttackCommandFromPrimaryClick,
 } from "./commandMapper.js";
 import { createAimIntent } from "./aimIntent.js";
+
+const FIRST_PERSON_MOUSE_SENSITIVITY = 0.004;
+const FIRST_PERSON_PITCH_SENSITIVITY = 0.002;
+const MAX_FIRST_PERSON_PITCH = 0.35;
 
 export function runGameFrame({
   currentTime,
@@ -24,7 +32,15 @@ export function runGameFrame({
   frameState.lastFrameTime = currentTime;
 
   const mouseSnapshot = mouseInput.getSnapshot();
-  const camera = createCurrentCameraSnapshot({ world, tilemap, renderer, mouseSnapshot });
+  updateFirstPersonCameraState(frameState, mouseSnapshot);
+
+  const camera = createCurrentCameraSnapshot({
+    world,
+    tilemap,
+    renderer,
+    mouseSnapshot,
+    frameState,
+  });
   const screenToWorldPoint = (screenPoint) => screenToWorld(camera, screenPoint);
 
   if (keyboardInput.consumeTacticalToggleIntent()) {
@@ -75,11 +91,40 @@ export function runGameFrame({
   );
 }
 
-function createCurrentCameraSnapshot({ world, tilemap, renderer, mouseSnapshot }) {
+function createCurrentCameraSnapshot({ world, tilemap, renderer, mouseSnapshot, frameState }) {
+  const focusPoint = getPlayerCenterPoint(world);
+
+  if (frameState.renderMode === "firstPerson") {
+    return createFirstPersonCameraSnapshot({
+      focusPoint,
+      viewport: renderer.getViewport(),
+      yaw: frameState.firstPersonCamera.yaw,
+      pitch: frameState.firstPersonCamera.pitch,
+    });
+  }
+
   return createCameraSnapshot({
-    focusPoint: getPlayerCenterPoint(world),
+    focusPoint,
     pointer: mouseSnapshot.pointer,
     viewport: renderer.getViewport(),
     tilemap,
   });
+}
+
+function updateFirstPersonCameraState(frameState, mouseSnapshot) {
+  if (frameState.renderMode !== "firstPerson") {
+    return;
+  }
+
+  const cameraState = frameState.firstPersonCamera;
+  cameraState.yaw += mouseSnapshot.pointer.movementX * FIRST_PERSON_MOUSE_SENSITIVITY;
+  cameraState.pitch = clamp(
+    cameraState.pitch - mouseSnapshot.pointer.movementY * FIRST_PERSON_PITCH_SENSITIVITY,
+    -MAX_FIRST_PERSON_PITCH,
+    MAX_FIRST_PERSON_PITCH,
+  );
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
