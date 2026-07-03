@@ -1,4 +1,4 @@
-import { getComponent, hasComponent, queryEntities } from "../ecs/world.js";
+import { getComponent, queryEntities } from "../ecs/world.js";
 import { ComponentType } from "../domain/components.js";
 
 const WINDUP_PHASE = "windup";
@@ -22,11 +22,12 @@ function buildRenderableEntitySnapshots(world) {
   return entityIds.map((entityId) => {
     const position = getComponent(world, entityId, ComponentType.Position);
     const renderable = getComponent(world, entityId, ComponentType.Renderable);
+    const playerControlled = getComponent(world, entityId, ComponentType.PlayerControlled);
 
     return {
       position: { ...position },
       renderable: { ...renderable },
-      isPlayer: hasComponent(world, entityId, ComponentType.PlayerControlled),
+      isPlayer: Boolean(playerControlled),
     };
   });
 }
