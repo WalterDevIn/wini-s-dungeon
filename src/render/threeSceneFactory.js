@@ -2,7 +2,7 @@ import { THREE, createThreeMaterials } from "./threeMaterials.js";
 
 const BACKGROUND_COLOR = 0x080a0c;
 const CAMERA_VIEW_TILE_HEIGHT = 18;
-const THREE_QUARTER_OFFSET = Object.freeze({ x: 8, y: 13, z: 9 });
+const TOP_DOWN_CAMERA_HEIGHT = 22;
 const EYE_HEIGHT = 1.45;
 const FIRST_PERSON_FORWARD_DISTANCE = 8;
 
@@ -16,7 +16,7 @@ export function createThreeScene({ canvas }) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(BACKGROUND_COLOR);
 
-  const threeQuarterCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+  const topDownCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
   const firstPersonCamera = new THREE.PerspectiveCamera(70, 1, 0.05, 1000);
 
   const tilemapGroup = new THREE.Group();
@@ -34,7 +34,7 @@ export function createThreeScene({ canvas }) {
     renderer,
     scene,
     cameras: {
-      threeQuarter: threeQuarterCamera,
+      topDown: topDownCamera,
       firstPerson: firstPersonCamera,
     },
     tilemapGroup,
@@ -54,7 +54,7 @@ export function resizeThreeScene({ renderer, cameras, canvas, viewport }) {
   }
 
   renderer.setPixelRatio(pixelRatio);
-  updateThreeQuarterProjection(cameras.threeQuarter, viewport);
+  updateTopDownProjection(cameras.topDown, viewport);
   updateFirstPersonProjection(cameras.firstPerson, viewport);
 }
 
@@ -64,18 +64,15 @@ export function updateThreeCamera({ cameras, tilemap, cameraSnapshot }) {
     return cameras.firstPerson;
   }
 
-  updateThreeQuarterCamera(cameras.threeQuarter, { tilemap, cameraSnapshot });
-  return cameras.threeQuarter;
+  updateTopDownCamera(cameras.topDown, { tilemap, cameraSnapshot });
+  return cameras.topDown;
 }
 
-function updateThreeQuarterCamera(camera, { tilemap, cameraSnapshot }) {
+function updateTopDownCamera(camera, { tilemap, cameraSnapshot }) {
   const target = getCameraTarget(tilemap, cameraSnapshot);
 
-  camera.position.set(
-    target.x + THREE_QUARTER_OFFSET.x,
-    THREE_QUARTER_OFFSET.y,
-    target.z + THREE_QUARTER_OFFSET.z,
-  );
+  camera.position.set(target.x, TOP_DOWN_CAMERA_HEIGHT, target.z);
+  camera.up.set(0, 0, -1);
   camera.lookAt(target.x, 0, target.z);
 }
 
@@ -87,6 +84,7 @@ function updateFirstPersonCamera(camera, { tilemap, cameraSnapshot }) {
   };
   const pitchOffset = Math.tan(cameraSnapshot.pitch) * FIRST_PERSON_FORWARD_DISTANCE;
 
+  camera.up.set(0, 1, 0);
   camera.position.set(position.x, EYE_HEIGHT, position.z);
   camera.lookAt(position.x + forward.x, EYE_HEIGHT + pitchOffset, position.z + forward.z);
 }
@@ -100,7 +98,7 @@ function createThreeGeometries() {
   };
 }
 
-function updateThreeQuarterProjection(camera, viewport) {
+function updateTopDownProjection(camera, viewport) {
   const aspect = viewport.width / Math.max(viewport.height, 1);
   const viewSize = CAMERA_VIEW_TILE_HEIGHT;
 
