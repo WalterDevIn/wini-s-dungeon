@@ -1,5 +1,6 @@
 import { drawActionIndicators } from "./drawActionIndicators.js";
 import { drawEntities } from "./drawEntities.js";
+import { drawFirstPersonScene } from "./drawFirstPersonScene.js";
 import { drawMap } from "./drawMap.js";
 
 export function createCanvasRenderer(canvas, context) {
@@ -37,6 +38,12 @@ export function createCanvasRenderer(canvas, context) {
 
     resizeCanvas();
     clearFrame();
+
+    if (renderSnapshot.camera.mode === "firstPerson") {
+      drawFirstPersonScene(context, renderSnapshot, pixelRatio);
+      return;
+    }
+
     drawMap(context, renderSnapshot.tilemap, pixelRatio, renderSnapshot.camera);
     drawEntities(context, renderSnapshot.entities, pixelRatio, renderSnapshot.camera);
     drawActionIndicators(
