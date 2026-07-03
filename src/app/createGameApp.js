@@ -19,6 +19,11 @@ export function createGameApp({ canvas, context, uiRoot }) {
   const frameState = {
     lastFrameTime: performance.now(),
     lastCommand: null,
+    renderMode: "firstPerson",
+    firstPersonCamera: {
+      yaw: 0,
+      pitch: 0,
+    },
   };
 
   createPlayer(world);
