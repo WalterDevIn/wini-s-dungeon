@@ -4,16 +4,16 @@ import { createPlayer } from "../game/createPlayer.js";
 import { createKeyboardInput } from "../input/keyboardInput.js";
 import { createMouseInput } from "../input/mouseInput.js";
 import { tilemap } from "../world/tilemap.js";
-import { createCanvasRenderer } from "../render/canvasRenderer.js";
+import { createThreeRenderer } from "../render/threeRenderer.js";
 import { createHudUi } from "../ui/hudUi.js";
 import { runGameFrame } from "./gameFrame.js";
 import { createTacticalModeController } from "./tacticalModeController.js";
 
-export function createGameApp({ canvas, context, uiRoot }) {
+export function createGameApp({ canvas, uiRoot }) {
   const world = createWorld();
   const keyboardInput = createKeyboardInput();
   const mouseInput = createMouseInput(window);
-  const renderer = createCanvasRenderer(canvas, context);
+  const renderer = createThreeRenderer(canvas);
   const hudUi = createHudUi(uiRoot);
   const tacticalMode = createTacticalModeController();
   const frameState = {
